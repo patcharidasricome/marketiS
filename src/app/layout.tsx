@@ -6,13 +6,13 @@ import Sidebar from "@/components/Sidebar";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
-  weight: ["400", "500", "600"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const workSans = Work_Sans({
   subsets: ["latin"],
   variable: "--font-work-sans",
-  weight: ["500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -27,10 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        style={{ fontFamily: "var(--font-inter, Inter, sans-serif)" }}
-        className={`${inter.variable} ${workSans.variable}`}
-      >
+      <body className={`${inter.variable} ${workSans.variable}`}>
         <div className="flex h-screen">
           <Sidebar />
           <main

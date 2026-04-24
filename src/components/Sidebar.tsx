@@ -19,6 +19,7 @@ const navItems = [
     links: [
       { href: "/history",   label: "Activity History", icon: "fa-history" },
       { href: "/analytics", label: "Analytics",        icon: "fa-bar-chart" },
+      { href: "/feedback",  label: "User Feedback",    icon: "fa-comments" },
     ],
   },
   {

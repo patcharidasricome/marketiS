@@ -22,10 +22,16 @@
   box-sizing: border-box;
 }
 
+/* ─── Typography ─────────────────────────────────────────────── */
 body {
+  font-family: var(--font-inter, 'Inter', sans-serif);
   color: var(--text-primary);
   overflow-x: hidden;
   background: linear-gradient(135deg, #f8f9fc 0%, #f3f4f9 100%);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-work-sans, 'Work Sans', sans-serif);
 }
 
 /* ─── Animations ─────────────────────────────────────────────── */
@@ -200,4 +206,10 @@ tr:hover { background: rgba(124, 58, 237, 0.02); }
   align-items: center;
   justify-content: center;
   padding: 1rem;
+}
+
+
+/* Main Layout */
+main {
+  padding: 40px;
 }
