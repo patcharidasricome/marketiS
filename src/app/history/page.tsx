@@ -1,7 +1,11 @@
 import SyncBanner from "@/components/SyncBanner";
-import { FacebookIcon, InstagramIcon, LinkedInIcon, MrnaThumb, CrisprThumb, MedThumb, FdaThumb } from "@/components/PlatformIcons";
+import {
+  FacebookIcon, InstagramIcon, LinkedInIcon,
+  MrnaThumb, CrisprThumb, MedThumb, FdaThumb,
+} from "@/components/PlatformIcons";
+import styles from "./page.module.css";
 
-const historyRows = [
+const HISTORY = [
   {
     id: 1,
     thumb: <MrnaThumb />,
@@ -43,24 +47,18 @@ const historyRows = [
 export default function HistoryPage() {
   return (
     <div>
+      {/* Page header */}
       <div style={{ marginBottom: "2rem" }}>
-        <h1
-          className="gradient-text"
-          style={{
-            fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-            fontSize: "1.8rem",
-            fontWeight: 700,
-            marginBottom: "0.5rem",
-          }}
-        >
+        <h1 className="gradient-text" style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "0.5rem" }}>
           Activity History
         </h1>
-        <div style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
           Complete log of all post activities and engagements.
-        </div>
+        </p>
       </div>
 
-      <div style={{ marginBottom: "1.5rem" }}>
+      {/* Filter */}
+      <div className={styles.toolbar}>
         <select className="form-select" style={{ maxWidth: 200 }}>
           <option>All Status</option>
           <option>Posted</option>
@@ -70,6 +68,7 @@ export default function HistoryPage() {
 
       <SyncBanner />
 
+      {/* Table */}
       <div className="card" style={{ padding: "1rem", overflowX: "auto" }}>
         <table style={{ fontSize: "0.85rem", minWidth: 780 }}>
           <thead>
@@ -83,27 +82,19 @@ export default function HistoryPage() {
             </tr>
           </thead>
           <tbody>
-            {historyRows.map((row) => (
+            {HISTORY.map((row) => (
               <tr key={row.id}>
                 <td>{row.thumb}</td>
                 <td>{row.date}</td>
                 <td>{row.topic}</td>
                 <td>{row.author}</td>
                 <td>
-                  <div style={{ display: "flex", gap: "0.3rem", alignItems: "center" }}>
-                    {row.platforms}
-                  </div>
+                  <div className={styles.platformRow}>{row.platforms}</div>
                 </td>
                 <td>
                   <span
-                    style={{
-                      background: row.status.bg,
-                      color: row.status.color,
-                      padding: "0.3rem 0.6rem",
-                      borderRadius: 4,
-                      fontSize: "0.75rem",
-                      fontWeight: 600,
-                    }}
+                    className={styles.statusBadge}
+                    style={{ background: row.status.bg, color: row.status.color }}
                   >
                     {row.status.label}
                   </span>

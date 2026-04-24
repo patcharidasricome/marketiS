@@ -1,0 +1,50 @@
+/* ─── Google Sheets Sync Banner ──────────────────────────────── */
+.banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.1rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  margin-bottom: 1.2rem;
+  font-size: 0.85rem;
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: #166534;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #166534;
+}
+
+.dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulseDot 2s ease-in-out infinite;
+}
+
+.syncBtn {
+  background: transparent;
+  border: 1px solid #86efac;
+  color: #166534;
+  padding: 0.3rem 0.7rem;
+  border-radius: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.syncBtn:hover {
+  background: #dcfce7;
+}

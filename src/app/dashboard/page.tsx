@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./page.module.css";
 
 const trendingTopics = [
   {
@@ -34,6 +35,12 @@ const trendingTopics = [
   },
 ];
 
+const statCards = [
+  { icon: "fa-calendar-check", color: "var(--primary-purple)", value: "24",    label: "Posts Scheduled" },
+  { icon: "fa-share-alt",      color: "var(--accent-cyan)",    value: "156",   label: "Posted This Month" },
+  { icon: "fa-heart",          color: "var(--accent-pink)",    value: "4,230", label: "Total Engagement" },
+];
+
 export default function DashboardPage() {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
   const router = useRouter();
@@ -49,111 +56,47 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* Page header */}
       <div style={{ marginBottom: "2rem" }}>
-        <h1
-          className="gradient-text"
-          style={{
-            fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-            fontSize: "1.8rem",
-            fontWeight: 700,
-            marginBottom: "0.5rem",
-          }}
-        >
+        <h1 className={`gradient-text ${styles.statValue}`} style={{ fontSize: "1.8rem", marginBottom: "0.5rem" }}>
           Dashboard
         </h1>
-        <div style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
           Welcome back! Here&apos;s your social media overview.
-        </div>
+        </p>
       </div>
 
-      {/* Stat Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-          gap: "1.5rem",
-          marginBottom: "2rem",
-        }}
-      >
-        {[
-          { icon: "fa-calendar-check", color: "var(--primary-purple)", value: "24", label: "Posts Scheduled" },
-          { icon: "fa-share-alt", color: "var(--accent-cyan)", value: "156", label: "Posted This Month" },
-          { icon: "fa-heart", color: "var(--accent-pink)", value: "4,230", label: "Total Engagement" },
-        ].map(({ icon, color, value, label }) => (
-          <div
-            key={label}
-            style={{
-              background: "white",
-              borderRadius: 12,
-              padding: "1.5rem",
-              border: "1px solid var(--border-light)",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "1.5rem" }}>
+      {/* Stat cards */}
+      <div className={styles.statGrid}>
+        {statCards.map(({ icon, color, value, label }) => (
+          <div key={label} className={styles.statCard}>
+            <div className={styles.statIcon}>
               <i className={`fas ${icon}`} style={{ color }} />
             </div>
-            <div
-              className="gradient-text"
-              style={{
-                fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-                fontSize: "2.2rem",
-                fontWeight: 700,
-                margin: "0.5rem 0",
-              }}
-            >
-              {value}
-            </div>
-            <div style={{ color: "var(--text-secondary)", fontSize: "0.85rem" }}>{label}</div>
+            <div className={`gradient-text ${styles.statValue}`}>{value}</div>
+            <div className={styles.statLabel}>{label}</div>
           </div>
         ))}
       </div>
 
-      {/* Trending Topics */}
+      {/* Trending card */}
       <div className="card">
-        <h2
-          style={{
-            fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-            fontSize: "1.1rem",
-            fontWeight: 600,
-            marginBottom: "1.5rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.8rem",
-            color: "var(--text-primary)",
-          }}
-        >
-          <i
-            className="fas fa-fire"
-            style={{
-              fontSize: "1.3rem",
-              background: "linear-gradient(135deg, var(--primary-navy), var(--primary-purple))",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          />
+        <h2 className={styles.cardTitle}>
+          <i className={`fas fa-fire ${styles.cardTitleIcon}`} />
           Weekly Trending Topics
         </h2>
-        <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginBottom: "1.5rem" }}>
-          <i className="fas fa-sync-alt" style={{ marginRight: "0.5rem" }} /> Updated weekly • Life Science focus
-        </div>
+        <p className={styles.updatedNote}>
+          <i className="fas fa-sync-alt" style={{ marginRight: "0.5rem" }} />
+          Updated weekly • Life Science focus
+        </p>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div className={styles.trendingList}>
           {trendingTopics.map((topic) => (
             <div className="trending-item" key={topic.id}>
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" }}>
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-                      fontWeight: 600,
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    {topic.title}
-                  </div>
-                  <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)" }}>{topic.meta}</div>
+              <div className={styles.trendingRow}>
+                <div className={styles.trendingInfo}>
+                  <div className={styles.trendingTitle}>{topic.title}</div>
+                  <div className={styles.trendingMeta}>{topic.meta}</div>
                 </div>
                 <button
                   className="btn-primary"
@@ -165,35 +108,13 @@ export default function DashboardPage() {
               </div>
 
               {expanded[topic.id] && (
-                <div
-                  style={{
-                    marginTop: "1rem",
-                    padding: "1rem",
-                    background: "#f9fafb",
-                    borderRadius: 6,
-                    borderLeft: "3px solid var(--primary-purple)",
-                    fontSize: "0.9rem",
-                    lineHeight: 1.6,
-                    color: "var(--text-primary)",
-                  }}
-                >
+                <div className={styles.contextBlock}>
                   <strong>Context:</strong> {topic.context}
                 </div>
               )}
 
               <button
-                style={{
-                  marginTop: "0.6rem",
-                  background: "transparent",
-                  border: "1px solid var(--border-light)",
-                  color: "var(--text-secondary)",
-                  padding: "0.4rem 0.8rem",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  fontSize: "0.8rem",
-                  fontWeight: 600,
-                  transition: "all 0.3s ease",
-                }}
+                className={styles.expandBtn}
                 onClick={() => toggleContext(topic.id)}
               >
                 {expanded[topic.id] ? "Collapse" : "Expand"}

@@ -1,0 +1,67 @@
+/* ─── Sidebar container ──────────────────────────────────────── */
+.sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: white;
+  border-right: 1px solid var(--border-light);
+  padding: 2rem 1.5rem;
+  overflow-y: auto;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.03);
+  animation: slideInLeft 0.6s ease-out 0.2s backwards;
+}
+
+/* ─── Logo ───────────────────────────────────────────────────── */
+.logo {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  /* gradient text applied via .gradient-text in globals */
+}
+
+/* ─── Section ────────────────────────────────────────────────── */
+.section {
+  margin-bottom: 2.5rem;
+}
+
+.sectionTitle {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+  margin-bottom: 1rem;
+}
+
+/* ─── Nav link ───────────────────────────────────────────────── */
+.link {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 0.5rem;
+  border: 1px solid transparent;
+}
+.link:hover {
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.05), rgba(124, 58, 237, 0.05));
+  transform: translateX(4px);
+}
+.link.active {
+  background: linear-gradient(135deg, var(--primary-navy) 0%, var(--primary-purple) 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.2);
+}
+
+.linkIcon {
+  font-size: 1.1rem;
+  width: 20px;
+  text-align: center;
+}

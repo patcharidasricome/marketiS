@@ -1,0 +1,124 @@
+/* ─── Calendar ───────────────────────────────────────────────── */
+
+.calendarWrapper {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+@media (max-width: 1024px) {
+  .calendarWrapper { grid-template-columns: 1fr; }
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--text-primary);
+}
+.cardTitleIcon {
+  background: linear-gradient(135deg, var(--primary-navy), var(--primary-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Day-of-week header row ─────────────────────────────────── */
+.dayHeaders {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 1rem;
+}
+.dayHeader {
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: 0.5rem;
+  text-transform: uppercase;
+}
+
+/* ─── Calendar day grid ──────────────────────────────────────── */
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  margin-bottom: 2rem;
+}
+
+.calendarDay {
+  aspect-ratio: 1;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  padding: 0.5rem;
+  background: white;
+  font-size: 0.85rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 60px;
+}
+.calendarDay:hover {
+  border-color: var(--primary-purple);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.1);
+}
+
+.otherMonth {
+  color: var(--text-secondary);
+  background: rgba(107, 114, 128, 0.02);
+}
+
+.today {
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.1), rgba(124, 58, 237, 0.1));
+  border-color: var(--primary-purple);
+  font-weight: 600;
+}
+
+.dayNumber {
+  font-weight: 600;
+}
+
+.dayPosts {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+/* ─── Platform badge ─────────────────────────────────────────── */
+.platformBadge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+  transition: all 0.3s ease;
+  user-select: none;
+  flex-shrink: 0;
+}
+.platformBadge:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.platformBadge:active {
+  cursor: grabbing;
+}
+
+/* ─── Upcoming posts sidebar ─────────────────────────────────── */
+.upcomingTitle {
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+.upcomingMeta {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}

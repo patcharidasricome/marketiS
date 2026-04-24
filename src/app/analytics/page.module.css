@@ -1,0 +1,49 @@
+/* ─── Analytics ──────────────────────────────────────────────── */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid var(--border-light);
+  text-align: center;
+}
+
+.statLabel {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.statValue {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+}
+
+.statTrend {
+  font-size: 0.85rem;
+  color: var(--success);
+}
+
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  color: var(--text-primary);
+}
+
+.cardTitleIcon {
+  background: linear-gradient(135deg, var(--primary-navy), var(--primary-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

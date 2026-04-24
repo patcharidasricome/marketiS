@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import styles from "./page.module.css";
 
 const trendingChips = ["mRNA Vaccines", "CRISPR Gene Therapy", "Personalized Medicine", "FDA Approvals"];
 
@@ -54,36 +55,22 @@ export default function GeneratorPage() {
 
   return (
     <div>
+      {/* Page header */}
       <div style={{ marginBottom: "2rem" }}>
-        <h1
-          className="gradient-text"
-          style={{
-            fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-            fontSize: "1.8rem",
-            fontWeight: 700,
-            marginBottom: "0.5rem",
-          }}
-        >
+        <h1 className="gradient-text" style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "0.5rem" }}>
           Content Generator
         </h1>
-        <div style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
+        <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
           Generate AI-optimized content for your target platforms.
-        </div>
+        </p>
       </div>
 
       {/* Trending chips */}
       <div style={{ marginBottom: "1.5rem" }}>
-        <h3
-          style={{
-            fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-            marginBottom: "1rem",
-            fontSize: "0.95rem",
-            color: "var(--text-secondary)",
-          }}
-        >
+        <h3 style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "var(--text-secondary)" }}>
           Trending topics for inspiration
         </h3>
-        <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+        <div className={styles.chipRow}>
           {trendingChips.map((chip) => (
             <span key={chip} className="chip" onClick={() => insertTopic(chip)}>
               {chip}
@@ -92,49 +79,17 @@ export default function GeneratorPage() {
         </div>
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "2rem",
-        }}
-      >
-        {/* Left: Input Panel */}
+      {/* Two-column grid */}
+      <div className={styles.generatorGrid}>
+        {/* ── Left: Input panel ── */}
         <div className="card">
-          <h2
-            style={{
-              fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-              fontSize: "1.1rem",
-              fontWeight: 600,
-              marginBottom: "1.5rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.8rem",
-            }}
-          >
-            <i
-              className="fas fa-pen-fancy"
-              style={{
-                fontSize: "1.3rem",
-                background: "linear-gradient(135deg, var(--primary-navy), var(--primary-purple))",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            />
+          <h2 className={styles.cardTitle}>
+            <i className={`fas fa-pen-fancy ${styles.cardTitleIcon}`} />
             Your Content Idea
           </h2>
 
           <div style={{ marginBottom: "1.5rem" }}>
-            <label
-              style={{
-                display: "block",
-                fontWeight: 600,
-                fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-                marginBottom: "0.6rem",
-                fontSize: "0.95rem",
-              }}
-            >
+            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.95rem" }}>
               Content Idea or Draft
             </label>
             <textarea
@@ -147,15 +102,7 @@ export default function GeneratorPage() {
           </div>
 
           <div style={{ marginBottom: "1.5rem" }}>
-            <label
-              style={{
-                display: "block",
-                fontWeight: 600,
-                fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-                marginBottom: "0.6rem",
-                fontSize: "0.95rem",
-              }}
-            >
+            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.95rem" }}>
               Select Platforms
             </label>
             <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
@@ -174,37 +121,25 @@ export default function GeneratorPage() {
           </div>
 
           <div style={{ marginBottom: "1.5rem" }}>
-            <label
-              style={{
-                display: "block",
-                fontWeight: 600,
-                fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-                marginBottom: "0.6rem",
-                fontSize: "0.95rem",
-              }}
-            >
+            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.95rem" }}>
               Upload Image (Optional)
             </label>
             <div
-              className={`drag-drop-area${draggingOver ? " dragging-over" : ""}`}
+              className={`${styles.dropZone}${draggingOver ? ` ${styles.dropZoneDragging}` : ""}`}
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => { e.preventDefault(); setDraggingOver(true); }}
               onDragLeave={() => setDraggingOver(false)}
               onDrop={handleDrop}
             >
               {imageSrc ? (
-                <img src={imageSrc} alt="Preview" style={{ maxHeight: 120, borderRadius: 8, objectFit: "cover" }} />
+                <img src={imageSrc} alt="Preview" className={styles.imageThumb} />
               ) : (
                 <>
-                  <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
-                    <i className="fas fa-cloud-arrow-up" style={{ color: "var(--text-secondary)" }} />
+                  <div className={styles.dropIcon}>
+                    <i className="fas fa-cloud-arrow-up" />
                   </div>
-                  <div style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
-                    Drag and drop or click to upload
-                  </div>
-                  <div style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "0.5rem" }}>
-                    Recommended: 1200x1200px or larger
-                  </div>
+                  <div className={styles.dropLabel}>Drag and drop or click to upload</div>
+                  <div className={styles.dropHint}>Recommended: 1200×1200px or larger</div>
                 </>
               )}
               <input
@@ -226,46 +161,23 @@ export default function GeneratorPage() {
           </button>
         </div>
 
-        {/* Right: Generated Output Panel */}
-        <div className={`card${generated ? "" : " right-panel-disabled"}`}>
-          <h2
-            style={{
-              fontFamily: "var(--font-work-sans, 'Work Sans', sans-serif)",
-              fontSize: "1.1rem",
-              fontWeight: 600,
-              marginBottom: "1.5rem",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.8rem",
-            }}
-          >
-            <i
-              className="fas fa-sparkles"
-              style={{
-                fontSize: "1.3rem",
-                background: "linear-gradient(135deg, var(--primary-navy), var(--primary-purple))",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            />
+        {/* ── Right: Generated output panel ── */}
+        <div className={`card${generated ? "" : ` ${styles.panelDisabled}`}`}>
+          <h2 className={styles.cardTitle}>
+            <i className={`fas fa-sparkles ${styles.cardTitleIcon}`} />
             AI-Generated Content
           </h2>
 
           {platforms.facebook && (
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 600, marginBottom: "0.5rem" }}>
-                Facebook (16:9)
-              </div>
+              <div className={styles.platformLabel}>Facebook (16:9)</div>
               {imageSrc && generated && (
-                <div style={{ aspectRatio: "16/9", background: "#f9fafb", borderRadius: 8, overflow: "hidden", marginBottom: "0.5rem" }}>
-                  <img src={imageSrc} alt="Facebook" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div className={styles.preview169}>
+                  <img src={imageSrc} alt="Facebook preview" />
                 </div>
               )}
-              <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 600, marginBottom: "0.5rem", marginTop: "1rem" }}>
-                Facebook Version
-              </div>
-              <div style={{ background: "#f9fafb", borderRadius: 8, padding: "1.5rem", marginBottom: "1.5rem" }}>
+              <div className={styles.platformLabelTop}>Facebook Version</div>
+              <div className={styles.contentPreview}>
                 {generated ? generatedContent.facebook : "Content will appear here"}
               </div>
             </div>
@@ -273,18 +185,14 @@ export default function GeneratorPage() {
 
           {platforms.instagram && (
             <div style={{ marginBottom: "1rem" }}>
-              <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 600, marginBottom: "0.5rem" }}>
-                Instagram (3:4)
-              </div>
+              <div className={styles.platformLabel}>Instagram (3:4)</div>
               {imageSrc && generated && (
-                <div style={{ aspectRatio: "3/4", background: "#f9fafb", borderRadius: 8, overflow: "hidden", marginBottom: "0.5rem" }}>
-                  <img src={imageSrc} alt="Instagram" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div className={styles.preview34}>
+                  <img src={imageSrc} alt="Instagram preview" />
                 </div>
               )}
-              <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 600, marginBottom: "0.5rem", marginTop: "1rem" }}>
-                Instagram Version
-              </div>
-              <div style={{ background: "#f9fafb", borderRadius: 8, padding: "1.5rem", marginBottom: "1.5rem" }}>
+              <div className={styles.platformLabelTop}>Instagram Version</div>
+              <div className={styles.contentPreview}>
                 {generated ? generatedContent.instagram : "Content will appear here"}
               </div>
             </div>
@@ -292,18 +200,14 @@ export default function GeneratorPage() {
 
           {platforms.linkedin && (
             <div style={{ marginBottom: "1.5rem" }}>
-              <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 600, marginBottom: "0.5rem" }}>
-                LinkedIn (16:9)
-              </div>
+              <div className={styles.platformLabel}>LinkedIn (16:9)</div>
               {imageSrc && generated && (
-                <div style={{ aspectRatio: "16/9", background: "#f9fafb", borderRadius: 8, overflow: "hidden", marginBottom: "0.5rem" }}>
-                  <img src={imageSrc} alt="LinkedIn" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <div className={styles.preview169}>
+                  <img src={imageSrc} alt="LinkedIn preview" />
                 </div>
               )}
-              <div style={{ fontSize: "0.85rem", color: "var(--text-secondary)", fontWeight: 600, marginBottom: "0.5rem", marginTop: "1rem" }}>
-                LinkedIn Version
-              </div>
-              <div style={{ background: "#f9fafb", borderRadius: 8, padding: "1.5rem", marginBottom: "1.5rem" }}>
+              <div className={styles.platformLabelTop}>LinkedIn Version</div>
+              <div className={styles.contentPreview}>
                 {generated ? generatedContent.linkedin : "Content will appear here"}
               </div>
             </div>
