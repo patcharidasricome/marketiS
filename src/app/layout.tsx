@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Work_Sans, Inter } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/Sidebar";
+import LayoutShell from "@/components/LayoutShell";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,15 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${workSans.variable}`}>
-        <div className="flex h-screen">
-          <Sidebar />
-          <main
-            className="flex-1 overflow-y-auto p-8 animate-slide-right"
-            style={{ background: "linear-gradient(180deg, #f8f9fc 0%, #f3f4f9 100%)" }}
-          >
-            {children}
-          </main>
-        </div>
+        <LayoutShell>{children}</LayoutShell>
       </body>
     </html>
   );

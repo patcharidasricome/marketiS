@@ -8,17 +8,22 @@ const navItems = [
   {
     section: "Main",
     links: [
-      { href: "/dashboard", label: "Dashboard",       icon: "fa-chart-line" },
-      { href: "/generator", label: "Generator",       icon: "fa-wand-magic-sparkles" },
-      { href: "/contents",  label: "Contents",        icon: "fa-folder-open" },
-      { href: "/calendar",  label: "Calendar",        icon: "fa-calendar-days" },
+      { href: "/dashboard", label: "Dashboard",        icon: "fa-chart-line" },
+      { href: "/generator", label: "Generator",        icon: "fa-wand-magic-sparkles" },
+      { href: "/contents",  label: "Contents",         icon: "fa-folder-open" },
+      { href: "/calendar",  label: "Calendar",         icon: "fa-calendar-days" },
     ],
   },
   {
-    section: "Management",
+    section: "Activity",
     links: [
       { href: "/history",   label: "Activity History", icon: "fa-history" },
       { href: "/analytics", label: "Analytics",        icon: "fa-bar-chart" },
+    ],
+  },
+  {
+    section: "Support",
+    links: [
       { href: "/feedback",  label: "User Feedback",    icon: "fa-comments" },
     ],
   },
@@ -30,7 +35,11 @@ const navItems = [
   },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  collapsed: boolean;
+}
+
+export default function Sidebar({ collapsed }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -39,28 +48,34 @@ export default function Sidebar() {
         href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
         rel="stylesheet"
       />
-      <aside className={styles.sidebar}>
+      <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
+
+        {/* Logo */}
         <div className={`${styles.logo} gradient-text`}>
-          <i className="fas fa-sparkles" />
-          SocialAI
+          <i className="fas fa-sparkles" style={{ flexShrink: 0 }} />
+          <span className={styles.logoText}>MarketiS</span>
         </div>
 
-        {navItems.map(({ section, links }) => (
-          <div key={section} className={styles.section}>
-            <div className={styles.sectionTitle}>{section}</div>
-            {links.map(({ href, label, icon }) => (
-              <Link
-                key={href}
-                href={href}
-                className={`${styles.link}${pathname === href ? ` ${styles.active}` : ""}`}
-              >
-                <i className={`fas ${icon} ${styles.linkIcon}`} />
-                {label}
-              </Link>
-            ))}
-          </div>
-        ))}
-      </aside>
+        {/* Nav sections */}
+        <nav className={styles.nav}>
+          {navItems.map(({ section, links }) => (
+            <div key={section} className={styles.section}>
+              <div className={styles.sectionTitle}>{section}</div>
+              {links.map(({ href, label, icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  title={collapsed ? label : undefined}
+                  className={`${styles.link}${pathname === href ? ` ${styles.active}` : ""}`}
+                >
+                  <i className={`fas ${icon} ${styles.linkIcon}`} />
+                  <span className={styles.linkLabel}>{label}</span>
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
+      </div>
     </>
   );
 }
