@@ -82,7 +82,7 @@ export default function ContentsPage() {
         </select>
       </div>
 
-      <SyncBanner />
+
 
       {/* Table */}
       <div className="card" style={{ padding: "1rem", overflowX: "auto" }}>

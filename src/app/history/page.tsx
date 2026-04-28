@@ -1,50 +1,52 @@
-import SyncBanner from "@/components/SyncBanner";
-import {
-  FacebookIcon, InstagramIcon, LinkedInIcon,
-  MrnaThumb, CrisprThumb, MedThumb, FdaThumb,
-} from "@/components/PlatformIcons";
+"use client";
+
+import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
-const HISTORY = [
-  {
-    id: 1,
-    thumb: <MrnaThumb />,
-    date: "2024-04-19 10:30",
-    topic: "mRNA Vaccine Updates",
-    author: "Pat",
-    platforms: [<FacebookIcon key="fb" />, <InstagramIcon key="ig" id="h1ig" />],
-    status: { label: "Posted", bg: "#dcfce7", color: "#166534" },
-  },
-  {
-    id: 2,
-    thumb: <CrisprThumb />,
-    date: "2024-04-18 14:15",
-    topic: "CRISPR Gene Therapy",
-    author: "Tian",
-    platforms: [<LinkedInIcon key="li" />],
-    status: { label: "Posted", bg: "#dcfce7", color: "#166534" },
-  },
-  {
-    id: 3,
-    thumb: <MedThumb />,
-    date: "2024-04-17 09:45",
-    topic: "Personalized Medicine",
-    author: "Michaela",
-    platforms: [<FacebookIcon key="fb" />, <InstagramIcon key="ig" id="h3ig" />, <LinkedInIcon key="li" />],
-    status: { label: "Scheduled", bg: "#fef3c7", color: "#92400e" },
-  },
-  {
-    id: 4,
-    thumb: <FdaThumb />,
-    date: "2024-04-16 16:20",
-    topic: "FDA Approval Announcements",
-    author: "Michaela",
-    platforms: [<FacebookIcon key="fb" />],
-    status: { label: "Scheduled", bg: "#fef3c7", color: "#92400e" },
-  },
-];
+type ActivityItem = {
+  id: string | number;
+  item: string;
+  action: string;
+  author: string;
+  date: string;
+  remarks: string;
+};
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? value || "—"
+    : date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+}
 
 export default function HistoryPage() {
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadActivities() {
+      try {
+        const res = await fetch("/api/activity");
+        const json = await res.json();
+        const rows: ActivityItem[] = (json.data ?? []).map((row: ActivityItem, index: number) => ({
+          id: row.id ?? index + 1,
+          item: row.item || "",
+          action: row.action || "",
+          author: row.author || "Unknown",
+          date: row.date || "",
+          remarks: row.remarks || "",
+        }));
+        setActivities(rows.reverse());
+      } catch {
+        setActivities([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadActivities();
+  }, []);
+
   return (
     <div>
       {/* Page header */}
@@ -53,52 +55,53 @@ export default function HistoryPage() {
           Activity History
         </h1>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-          Complete log of all post activities and engagements.
+          Complete log of user activities across the website.
         </p>
       </div>
-
-      {/* Filter */}
-      <div className={styles.toolbar}>
-        <select className="form-select" style={{ maxWidth: 200 }}>
-          <option>All Status</option>
-          <option>Posted</option>
-          <option>Scheduled</option>
-        </select>
-      </div>
-
-      <SyncBanner />
 
       {/* Table */}
       <div className="card" style={{ padding: "1rem", overflowX: "auto" }}>
         <table style={{ fontSize: "0.85rem", minWidth: 780 }}>
           <thead>
             <tr>
-              <th style={{ width: 64 }}>Thumbnail</th>
-              <th>Date Created</th>
-              <th>Topic</th>
+              <th>Activity</th>
+              <th>Item</th>
+              <th>Action</th>
               <th>Author</th>
-              <th>Platforms</th>
-              <th>Status</th>
+              <th>Date</th>
+              <th>Remarks</th>
             </tr>
           </thead>
           <tbody>
-            {HISTORY.map((row) => (
+            {loading && (
+              <tr>
+                <td colSpan={6} className={styles.emptyCell}>
+                  <i className="fas fa-spinner fa-spin" /> Loading activity history...
+                </td>
+              </tr>
+            )}
+
+            {!loading && activities.length === 0 && (
+              <tr>
+                <td colSpan={6} className={styles.emptyCell}>
+                  No activity history available.
+                </td>
+              </tr>
+            )}
+
+            {!loading && activities.map((row) => (
               <tr key={row.id}>
-                <td>{row.thumb}</td>
-                <td>{row.date}</td>
-                <td>{row.topic}</td>
+                <td>
+                  <div className={styles.activitySentence}>
+                    <strong>{row.item}</strong> {row.action} by <strong>{row.author}</strong> on {formatDate(row.date)}
+                    {row.remarks ? <> because {row.remarks}</> : null}
+                  </div>
+                </td>
+                <td>{row.item}</td>
+                <td>{row.action}</td>
                 <td>{row.author}</td>
-                <td>
-                  <div className={styles.platformRow}>{row.platforms}</div>
-                </td>
-                <td>
-                  <span
-                    className={styles.statusBadge}
-                    style={{ background: row.status.bg, color: row.status.color }}
-                  >
-                    {row.status.label}
-                  </span>
-                </td>
+                <td>{formatDate(row.date)}</td>
+                <td>{row.remarks || "—"}</td>
               </tr>
             ))}
           </tbody>

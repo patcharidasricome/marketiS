@@ -125,6 +125,68 @@
   pointer-events: none;
 }
 
+/* ─── Output platform tabs ───────────────────────────────────── */
+.outputTabRow {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-light);
+  overflow: visible;
+}
+
+.outputTab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-height: 48px;
+  padding: 0.65rem 1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: var(--font-inter, 'Inter', sans-serif);
+  white-space: normal;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.outputTab:hover {
+  color: var(--primary-purple);
+  background: rgba(124, 58, 237, 0.05);
+}
+
+.outputTabActive {
+  color: var(--primary-purple);
+  background: transparent;
+}
+
+.outputTabActive::after {
+  content: "";
+  position: absolute;
+  left: 0.75rem;
+  right: 0.75rem;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(135deg, var(--primary-navy), var(--primary-purple));
+}
+
+.emptyOutputState {
+  padding: 1.25rem;
+  border: 1px dashed var(--border-light);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
 /* ─── Image preview aspect ratio containers ──────────────────── */
 .preview169 {
   aspect-ratio: 16 / 9;
@@ -159,6 +221,39 @@
   margin-top: 1rem;
 }
 
+.previewHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.previewHeader .platformLabelTop {
+  margin-top: 0;
+}
+
+.editPreviewBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1.5px solid var(--border-light);
+  background: white;
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.editPreviewBtn:hover {
+  border-color: var(--primary-purple);
+  background: rgba(124, 58, 237, 0.06);
+  color: var(--primary-purple);
+}
+
 .contentPreview {
   background: #f9fafb;
   border-radius: 8px;
@@ -166,4 +261,24 @@
   margin-bottom: 1.5rem;
   font-size: 0.9rem;
   line-height: 1.6;
+}
+
+.contentEditor {
+  width: 100%;
+  background: #f9fafb;
+  border: 1.5px solid var(--primary-purple);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  font-family: var(--font-inter, 'Inter', sans-serif);
+  color: var(--text-primary);
+  resize: vertical;
+  min-height: 180px;
+}
+
+.contentEditor:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.08);
 }

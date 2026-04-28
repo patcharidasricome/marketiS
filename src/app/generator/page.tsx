@@ -13,6 +13,8 @@ type TrendTopic = {
   category: string;
 };
 
+type PlatformKey = "facebook" | "instagram" | "linkedin";
+
 const trendCategories = ["Life Sciences", "Utilities", "Oil & Gas", "SAP"];
 
 function createThumbnail(dataUrl: string, size = 120): Promise<string> {
@@ -52,6 +54,18 @@ const generatedContent = {
     "Advanced research in life sciences demonstrates the transformative impact of innovation. Our latest findings showcase how precision medicine and breakthrough therapies are reshaping the industry. #LifeSciences #MedicalInnovation #Research",
 };
 
+const outputPlatforms: Array<{
+  key: PlatformKey;
+  label: string;
+  aspectLabel: string;
+  previewClass: string;
+  icon: React.ReactNode;
+}> = [
+  { key: "linkedin", label: "LinkedIn", aspectLabel: "LinkedIn (16:9)", previewClass: "preview169", icon: <LinkedInIcon size={16} /> },
+  { key: "facebook", label: "Facebook", aspectLabel: "Facebook (16:9)", previewClass: "preview169", icon: <FacebookIcon size={16} /> },
+  { key: "instagram", label: "Instagram", aspectLabel: "Instagram (3:4)", previewClass: "preview34", icon: <InstagramIcon size={16} id="output-tab" /> },
+];
+
 export default function GeneratorPage() {
   const [contentIdea, setContentIdea] = useState("");
   const [author, setAuthor] = useState("");
@@ -60,6 +74,9 @@ export default function GeneratorPage() {
   const [generated, setGenerated] = useState(false);
   const [draggingOver, setDraggingOver] = useState(false);
   const [trendingChips, setTrendingChips] = useState<string[]>(fallbackTrendingChips);
+  const [activeOutputPlatform, setActiveOutputPlatform] = useState<PlatformKey>("linkedin");
+  const [editingPlatform, setEditingPlatform] = useState<PlatformKey | null>(null);
+  const [generatedDrafts, setGeneratedDrafts] = useState<Record<PlatformKey, string>>(generatedContent);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -138,6 +155,9 @@ export default function GeneratorPage() {
           dateCreated: new Date().toISOString(),
           dateScheduled: "",
           platforms: selectedPlatforms,
+          linkedinCaption: generatedDrafts.linkedin,
+          facebookCaption: generatedDrafts.facebook,
+          instagramCaption: generatedDrafts.instagram,
         }),
       });
 
@@ -146,13 +166,29 @@ export default function GeneratorPage() {
         throw new Error(json.error || "Failed to save content");
       }
 
+      await fetch("/api/activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          item: title,
+          action: "has saved to Contents Library",
+          author: author.trim() || "Current User",
+          date: new Date().toISOString(),
+          remarks: "generated from Content Generator",
+        }),
+      }).catch(() => undefined);
+
       router.push("/contents");
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to save content");
     } finally {
       setSaving(false);
     }
-  }, [contentIdea, imageSrc, platforms, router]);
+  }, [author, contentIdea, generatedDrafts, imageSrc, platforms, router]);
+
+  const selectedOutputPlatforms = outputPlatforms.filter(({ key }) => platforms[key]);
+  const activeOutput = selectedOutputPlatforms.find(({ key }) => key === activeOutputPlatform) ?? selectedOutputPlatforms[0];
+  const isEditingActiveOutput = activeOutput ? editingPlatform === activeOutput.key : false;
 
   return (
     <div>
@@ -162,14 +198,14 @@ export default function GeneratorPage() {
           Content Generator
         </h1>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
-          Generate AI-optimized content for your target platforms.
+          Generate AI-optimized content for your target social media platforms.
         </p>
       </div>
 
       {/* Trending chips */}
       <div style={{ marginBottom: "1.5rem" }}>
         <h3 style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "var(--text-secondary)" }}>
-          Trending topics for inspiration
+          Trending topics:
         </h3>
         <div className={styles.chipRow}>
           {trendingChips.map((chip) => (
@@ -297,52 +333,68 @@ export default function GeneratorPage() {
         <div className={`card${generated ? "" : ` ${styles.panelDisabled}`}`}>
           <h2 className={styles.cardTitle}>
             <i className={`fas fa-sparkles ${styles.cardTitleIcon}`} />
-            AI-Generated Content
+            Preview
           </h2>
 
-          {platforms.facebook && (
-            <div style={{ marginBottom: "1rem" }}>
-              <div className={styles.platformLabel}>Facebook (16:9)</div>
-              {imageSrc && generated && (
-                <div className={styles.preview169}>
-                  <img src={imageSrc} alt="Facebook preview" />
-                </div>
-              )}
-              <div className={styles.platformLabelTop}>Facebook Version</div>
-              <div className={styles.contentPreview}>
-                {generated ? generatedContent.facebook : "Content will appear here"}
-              </div>
+          {selectedOutputPlatforms.length === 0 ? (
+            <div className={styles.emptyOutputState}>
+              Select at least one platform to preview generated content.
             </div>
-          )}
+          ) : (
+            <>
+              <div className={styles.outputTabRow}>
+                {selectedOutputPlatforms.map(({ key, label, icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeOutput?.key === key}
+                    className={`${styles.outputTab}${activeOutput?.key === key ? ` ${styles.outputTabActive}` : ""}`}
+                    onClick={() => setActiveOutputPlatform(key)}
+                  >
+                    {icon}
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
 
-          {platforms.instagram && (
-            <div style={{ marginBottom: "1rem" }}>
-              <div className={styles.platformLabel}>Instagram (3:4)</div>
-              {imageSrc && generated && (
-                <div className={styles.preview34}>
-                  <img src={imageSrc} alt="Instagram preview" />
+              {activeOutput && (
+                <div style={{ marginBottom: "1.5rem" }}>
+                  <div className={styles.platformLabel}>{activeOutput.aspectLabel}</div>
+                  {imageSrc && generated && (
+                    <div className={styles[activeOutput.previewClass as "preview169" | "preview34"]}>
+                      <img src={imageSrc} alt={`${activeOutput.label} preview`} />
+                    </div>
+                  )}
+                  <div className={styles.previewHeader}>
+                    <div className={styles.platformLabelTop}>{activeOutput.label} Version</div>
+                    {generated && (
+                      <button
+                        type="button"
+                        className={styles.editPreviewBtn}
+                        onClick={() => setEditingPlatform(isEditingActiveOutput ? null : activeOutput.key)}
+                        aria-label={isEditingActiveOutput ? "Finish editing generated post" : "Edit generated post"}
+                      >
+                        <i className={`fas ${isEditingActiveOutput ? "fa-check" : "fa-pen-to-square"}`} />
+                        {isEditingActiveOutput ? "Done" : "Edit"}
+                      </button>
+                    )}
+                  </div>
+                  {isEditingActiveOutput ? (
+                    <textarea
+                      className={styles.contentEditor}
+                      value={generatedDrafts[activeOutput.key]}
+                      onChange={(e) => setGeneratedDrafts((prev) => ({ ...prev, [activeOutput.key]: e.target.value }))}
+                      rows={7}
+                    />
+                  ) : (
+                    <div className={styles.contentPreview}>
+                      {generated ? generatedDrafts[activeOutput.key] : "Content will appear here"}
+                    </div>
+                  )}
                 </div>
               )}
-              <div className={styles.platformLabelTop}>Instagram Version</div>
-              <div className={styles.contentPreview}>
-                {generated ? generatedContent.instagram : "Content will appear here"}
-              </div>
-            </div>
-          )}
-
-          {platforms.linkedin && (
-            <div style={{ marginBottom: "1.5rem" }}>
-              <div className={styles.platformLabel}>LinkedIn (16:9)</div>
-              {imageSrc && generated && (
-                <div className={styles.preview169}>
-                  <img src={imageSrc} alt="LinkedIn preview" />
-                </div>
-              )}
-              <div className={styles.platformLabelTop}>LinkedIn Version</div>
-              <div className={styles.contentPreview}>
-                {generated ? generatedContent.linkedin : "Content will appear here"}
-              </div>
-            </div>
+            </>
           )}
 
           <button

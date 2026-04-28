@@ -103,7 +103,7 @@ export default function DashboardPage() {
         </h2>
         <p className={styles.updatedNote}>
           <i className="fas fa-sync-alt" style={{ marginRight: "0.5rem" }} />
-          RSS feeds • latest 7 days • cached 12 hours{formattedUpdatedAt ? ` • ${formattedUpdatedAt}` : ""}
+          RSS feeds • latest 7 days • {formattedUpdatedAt ? ` updated ${formattedUpdatedAt}` : ""}
         </p>
 
         <div className={styles.chipRow}>
@@ -121,7 +121,7 @@ export default function DashboardPage() {
         <div className={styles.trendingList}>
           {loadingTopics && (
             <div className={styles.trendsState}>
-              <i className="fas fa-spinner fa-spin" /> Loading Google Trends topics...
+              <i className="fas fa-spinner fa-spin" /> Loading topics...
             </div>
           )}
 
@@ -158,10 +158,10 @@ export default function DashboardPage() {
 
               {expanded[topic.id] && (
                 <div className={styles.contextBlock}>
-                  <strong>Context:</strong> {topic.context}
+                  {topic.context}<br/>
                   {topic.link && (
                     <a href={topic.link} target="_blank" rel="noreferrer" className={styles.trendLink}>
-                      View source <i className="fas fa-arrow-up-right-from-square" />
+                      Source <i className="fas fa-arrow-up-right-from-square" />
                     </a>
                   )}
                 </div>

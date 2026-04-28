@@ -1,26 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export type ContentPayload = {
-  thumbnailImage: string;
-  title: string;
+export type ActivityPayload = {
+  item: string;
+  action: string;
   author: string;
-  dateCreated: string;
-  dateScheduled: string;
-  platforms: string[];
-  linkedinCaption: string;
-  facebookCaption: string;
-  instagramCaption: string;
+  date: string;
+  remarks: string;
 };
 
 function getScriptUrl() {
-  return process.env.CONTENTS_SCRIPT_URL;
+  return process.env.HISTORY_SCRIPT_URL;
 }
 
 export async function GET() {
   const scriptUrl = getScriptUrl();
-  if (!scriptUrl) {
-    return NextResponse.json({ data: [] });
-  }
+  if (!scriptUrl) return NextResponse.json({ data: [] });
 
   try {
     const res = await fetch(scriptUrl, { redirect: "follow", cache: "no-store" });
@@ -37,13 +31,13 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const scriptUrl = getScriptUrl();
   if (!scriptUrl) {
-    return NextResponse.json({ error: "CONTENTS_SCRIPT_URL is not configured" }, { status: 500 });
+    return NextResponse.json({ error: "HISTORY_SCRIPT_URL is not configured" }, { status: 500 });
   }
 
-  const body: ContentPayload = await req.json();
+  const body: ActivityPayload = await req.json();
 
-  if (!body.title?.trim()) {
-    return NextResponse.json({ error: "Title is required" }, { status: 400 });
+  if (!body.item?.trim() || !body.action?.trim()) {
+    return NextResponse.json({ error: "Item and action are required" }, { status: 400 });
   }
 
   try {
@@ -64,9 +58,7 @@ export async function POST(req: NextRequest) {
         text.includes("accounts.google.com");
 
       if (isAccessDenied) {
-        throw new Error(
-          "Google Apps Script access denied. Re-deploy the web app with access set to Anyone, and make sure the script owner can edit the Google Sheet.",
-        );
+        throw new Error("Google Apps Script access denied. Re-deploy with access set to Anyone.");
       }
 
       throw new Error(`Unexpected content-type: ${contentType}`);
@@ -76,7 +68,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true });
   } catch (err) {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to save content" },
+      { error: err instanceof Error ? err.message : "Failed to log activity" },
       { status: 502 },
     );
   }
