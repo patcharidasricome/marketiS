@@ -2,9 +2,46 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { FacebookIcon, InstagramIcon, LinkedInIcon } from "@/components/PlatformIcons";
 import styles from "./page.module.css";
 
-const trendingChips = ["mRNA Vaccines", "CRISPR Gene Therapy", "Personalized Medicine", "FDA Approvals"];
+const fallbackTrendingChips = ["mRNA Vaccines", "CRISPR Gene Therapy", "Personalized Medicine", "FDA Approvals"];
+
+type TrendTopic = {
+  id: string;
+  title: string;
+  category: string;
+};
+
+const trendCategories = ["Life Sciences", "Utilities", "Oil & Gas", "SAP"];
+
+function createThumbnail(dataUrl: string, size = 120): Promise<string> {
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve("");
+        return;
+      }
+
+      canvas.width = size;
+      canvas.height = size;
+
+      const scale = Math.max(size / image.width, size / image.height);
+      const width = image.width * scale;
+      const height = image.height * scale;
+      const x = (size - width) / 2;
+      const y = (size - height) / 2;
+
+      ctx.drawImage(image, x, y, width, height);
+      resolve(canvas.toDataURL("image/jpeg", 0.72));
+    };
+    image.onerror = () => resolve("");
+    image.src = dataUrl;
+  });
+}
 
 const generatedContent = {
   facebook:
@@ -17,10 +54,14 @@ const generatedContent = {
 
 export default function GeneratorPage() {
   const [contentIdea, setContentIdea] = useState("");
+  const [author, setAuthor] = useState("");
   const [platforms, setPlatforms] = useState({ facebook: true, instagram: true, linkedin: true });
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [generated, setGenerated] = useState(false);
   const [draggingOver, setDraggingOver] = useState(false);
+  const [trendingChips, setTrendingChips] = useState<string[]>(fallbackTrendingChips);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
@@ -33,6 +74,29 @@ export default function GeneratorPage() {
       const timeout = window.setTimeout(() => setContentIdea(topic), 0);
       return () => window.clearTimeout(timeout);
     }
+  }, []);
+
+  useEffect(() => {
+    async function loadTrendingChips() {
+      try {
+        const res = await fetch("/api/trends");
+        const data = await res.json();
+        if (!res.ok) throw new Error("Unable to load trends");
+
+        const topics = (data.topics ?? []) as TrendTopic[];
+        const topicTitles = trendCategories.flatMap((category) =>
+          topics.filter((topic) => topic.category === category).slice(0, 1).map((topic) => topic.title),
+        );
+
+        if (topicTitles.length > 0) {
+          setTrendingChips([...new Set(topicTitles)]);
+        }
+      } catch {
+        setTrendingChips(fallbackTrendingChips);
+      }
+    }
+
+    loadTrendingChips();
   }, []);
 
   function insertTopic(topic: string) {
@@ -52,9 +116,43 @@ export default function GeneratorPage() {
     if (file?.type.startsWith("image/")) handleImageFile(file);
   }
 
-  const handleSaveToContents = useCallback(() => {
-    router.push("/contents");
-  }, [router]);
+  const handleSaveToContents = useCallback(async () => {
+    const title = contentIdea.trim() || "Untitled Content";
+    const selectedPlatforms = Object.entries(platforms)
+      .filter(([, selected]) => selected)
+      .map(([platform]) => platform === "instagram" ? "IG" : platform.charAt(0).toUpperCase() + platform.slice(1));
+
+    setSaving(true);
+    setSaveError("");
+
+    try {
+      const thumbnailImage = imageSrc ? await createThumbnail(imageSrc, 120) : "";
+
+      const res = await fetch("/api/contents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          thumbnailImage,
+          title,
+          author: author.trim() || "Current User",
+          dateCreated: new Date().toISOString(),
+          dateScheduled: "",
+          platforms: selectedPlatforms,
+        }),
+      });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error || "Failed to save content");
+      }
+
+      router.push("/contents");
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Failed to save content");
+    } finally {
+      setSaving(false);
+    }
+  }, [contentIdea, imageSrc, platforms, router]);
 
   return (
     <div>
@@ -106,20 +204,51 @@ export default function GeneratorPage() {
 
           <div style={{ marginBottom: "1.5rem" }}>
             <label style={{ display: "block", fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.95rem" }}>
+              Author
+            </label>
+            <input
+              className="form-input"
+              type="text"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="Enter author name..."
+            />
+          </div>
+
+          <div style={{ marginBottom: "1.5rem" }}>
+            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.95rem" }}>
               Select Platforms
             </label>
-            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-              {(["facebook", "instagram", "linkedin"] as const).map((p) => (
-                <label key={p} style={{ display: "flex", alignItems: "center", gap: "0.6rem", cursor: "pointer", fontWeight: 500 }}>
-                  <input
-                    type="checkbox"
-                    checked={platforms[p]}
-                    onChange={(e) => setPlatforms((prev) => ({ ...prev, [p]: e.target.checked }))}
-                    style={{ width: 18, height: 18, accentColor: "var(--primary-purple)" }}
-                  />
-                  {p.charAt(0).toUpperCase() + p.slice(1)}
-                </label>
-              ))}
+            <div className={styles.platformButtonList}>
+              <button
+                type="button"
+                className={`${styles.platformButton}${platforms.facebook ? ` ${styles.platformButtonActive}` : ""}`}
+                onClick={() => setPlatforms((prev) => ({ ...prev, facebook: !prev.facebook }))}
+              >
+                <FacebookIcon size={22} />
+                <span>Facebook</span>
+                {platforms.facebook && <i className={`fas fa-check ${styles.platformCheck}`} />}
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.platformButton}${platforms.instagram ? ` ${styles.platformButtonActive}` : ""}`}
+                onClick={() => setPlatforms((prev) => ({ ...prev, instagram: !prev.instagram }))}
+              >
+                <InstagramIcon size={22} id="generator-platform" />
+                <span>Instagram</span>
+                {platforms.instagram && <i className={`fas fa-check ${styles.platformCheck}`} />}
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.platformButton}${platforms.linkedin ? ` ${styles.platformButtonActive}` : ""}`}
+                onClick={() => setPlatforms((prev) => ({ ...prev, linkedin: !prev.linkedin }))}
+              >
+                <LinkedInIcon size={22} />
+                <span>LinkedIn</span>
+                {platforms.linkedin && <i className={`fas fa-check ${styles.platformCheck}`} />}
+              </button>
             </div>
           </div>
 
@@ -220,9 +349,19 @@ export default function GeneratorPage() {
             className="btn-primary"
             style={{ width: "100%", justifyContent: "center", padding: "1rem" }}
             onClick={handleSaveToContents}
+            disabled={saving}
           >
-            <i className="fas fa-bookmark" /> Save to Contents Library
+            {saving ? (
+              <><i className="fas fa-spinner fa-spin" /> Saving...</>
+            ) : (
+              <><i className="fas fa-bookmark" /> Save to Contents Library</>
+            )}
           </button>
+          {saveError && (
+            <p style={{ marginTop: "0.75rem", color: "var(--error)", fontSize: "0.82rem" }}>
+              <i className="fas fa-circle-exclamation" /> {saveError}
+            </p>
+          )}
         </div>
       </div>
     </div>

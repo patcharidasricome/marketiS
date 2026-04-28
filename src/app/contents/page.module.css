@@ -21,6 +21,32 @@
   align-items: center;
 }
 
+.platformText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.thumbnailImage {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  object-fit: cover;
+  border: 1px solid var(--border-light);
+}
+
+.thumbnailPlaceholder {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  background: linear-gradient(135deg, rgba(26,35,126,0.08), rgba(124,58,237,0.08));
+  color: var(--primary-purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .contentTitle {
   font-weight: 600;
 }

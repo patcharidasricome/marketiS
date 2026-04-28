@@ -1,48 +1,63 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import SyncBanner from "@/components/SyncBanner";
-import { FacebookIcon, InstagramIcon, LinkedInIcon, MrnaThumb, CrisprThumb, MedThumb } from "@/components/PlatformIcons";
+import { FacebookIcon, InstagramIcon, LinkedInIcon } from "@/components/PlatformIcons";
 import styles from "./page.module.css";
 
-const CONTENTS = [
-  {
-    id: 1,
-    thumb: <MrnaThumb />,
-    title: "mRNA Vaccine Research",
-    subtitle: "Latest findings on vaccine efficacy",
-    author: "Pat",
-    created: "2024-04-19",
-    scheduled: "2024-04-25",
-    platforms: [<FacebookIcon key="fb" />, <InstagramIcon key="ig" id="c1-ig" />],
-    status: { label: "Drafted", bg: "#e0e7ff", color: "#3730a3" },
-    approvedBy: "Michaela",
-  },
-  {
-    id: 2,
-    thumb: <CrisprThumb />,
-    title: "CRISPR Gene Therapy",
-    subtitle: "Breakthrough in genetic disease treatment",
-    author: "Tian",
-    created: "2024-04-18",
-    scheduled: "2024-04-28",
-    platforms: [<LinkedInIcon key="li" />],
-    status: { label: "Scheduled", bg: "#fef3c7", color: "#92400e" },
-    approvedBy: "Pat",
-  },
-  {
-    id: 3,
-    thumb: <MedThumb />,
-    title: "Personalized Medicine Insights",
-    subtitle: "How precision diagnostics transform patient care",
-    author: "Michaela",
-    created: "2024-04-17",
-    scheduled: "—",
-    platforms: [<FacebookIcon key="fb" />, <InstagramIcon key="ig" id="c3-ig" />, <LinkedInIcon key="li" />],
-    status: { label: "Drafted", bg: "#e0e7ff", color: "#3730a3" },
-    approvedBy: "Tian",
-  },
-];
+type ContentItem = {
+  id: string | number;
+  thumbnailImage: string;
+  title: string;
+  author: string;
+  dateCreated: string;
+  dateScheduled: string;
+  platforms: string[];
+};
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value || "—" : date.toLocaleDateString("en-CA");
+}
+
+function platformIcon(platform: string, id: string | number) {
+  const normalized = platform.toLowerCase();
+  if (normalized.includes("facebook")) return <FacebookIcon key={`${id}-fb`} />;
+  if (normalized.includes("ig") || normalized.includes("instagram")) return <InstagramIcon key={`${id}-ig`} id={`${id}-ig`} />;
+  if (normalized.includes("linkedin")) return <LinkedInIcon key={`${id}-li`} />;
+  return <span key={`${id}-${platform}`} className={styles.platformText}>{platform}</span>;
+}
 
 export default function ContentsPage() {
+  const [contents, setContents] = useState<ContentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadContents() {
+      try {
+        const res = await fetch("/api/contents");
+        const json = await res.json();
+        const rows: ContentItem[] = (json.data ?? []).map((row: ContentItem, index: number) => ({
+          id: row.id ?? index + 1,
+          thumbnailImage: row.thumbnailImage || "",
+          title: row.title || "Untitled Content",
+          author: row.author || "Current User",
+          dateCreated: row.dateCreated || "",
+          dateScheduled: row.dateScheduled || "",
+          platforms: Array.isArray(row.platforms) ? row.platforms : String(row.platforms || "").split(", ").filter(Boolean),
+        }));
+        setContents(rows.reverse());
+      } catch {
+        setContents([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadContents();
+  }, []);
+
   return (
     <div>
       {/* Page header */}
@@ -80,34 +95,48 @@ export default function ContentsPage() {
               <th>Date Created</th>
               <th>Date Scheduled</th>
               <th>Platforms</th>
-              <th>Status</th>
-              <th>Approved By</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {CONTENTS.map((row) => (
+            {loading && (
+              <tr>
+                <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>
+                  <i className="fas fa-spinner fa-spin" /> Loading contents...
+                </td>
+              </tr>
+            )}
+
+            {!loading && contents.length === 0 && (
+              <tr>
+                <td colSpan={7} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>
+                  No contents available.
+                </td>
+              </tr>
+            )}
+
+            {!loading && contents.map((row) => (
               <tr key={row.id}>
-                <td>{row.thumb}</td>
+                <td>
+                  {row.thumbnailImage ? (
+                    <img src={row.thumbnailImage} alt="" className={styles.thumbnailImage} />
+                  ) : (
+                    <div className={styles.thumbnailPlaceholder}>
+                      <i className="fas fa-image" />
+                    </div>
+                  )}
+                </td>
                 <td>
                   <div className={styles.contentTitle}>{row.title}</div>
-                  <div className={styles.contentSubtitle}>{row.subtitle}</div>
                 </td>
                 <td>{row.author}</td>
-                <td>{row.created}</td>
-                <td>{row.scheduled}</td>
+                <td>{formatDate(row.dateCreated)}</td>
+                <td>{formatDate(row.dateScheduled)}</td>
                 <td>
-                  <div className={styles.platformRow}>{row.platforms}</div>
+                  <div className={styles.platformRow}>
+                    {row.platforms.map((platform) => platformIcon(platform, row.id))}
+                  </div>
                 </td>
-                <td>
-                  <span
-                    className={styles.statusBadge}
-                    style={{ background: row.status.bg, color: row.status.color }}
-                  >
-                    {row.status.label}
-                  </span>
-                </td>
-                <td>{row.approvedBy}</td>
                 <td>
                   <button className="btn-secondary btn-small">Edit</button>
                 </td>
