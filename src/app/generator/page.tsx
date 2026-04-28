@@ -25,10 +25,13 @@ export default function GeneratorPage() {
   const router = useRouter();
 
   useEffect(() => {
-    const topic = sessionStorage.getItem("contentTopic");
+    const params = new URLSearchParams(window.location.search);
+    const topic = params.get("topic") || sessionStorage.getItem("contentTopic");
+
     if (topic) {
-      setContentIdea(topic);
       sessionStorage.removeItem("contentTopic");
+      const timeout = window.setTimeout(() => setContentIdea(topic), 0);
+      return () => window.clearTimeout(timeout);
     }
   }, []);
 

@@ -52,7 +52,32 @@
 .updatedNote {
   font-size: 0.85rem;
   color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 1.5rem;
+}
+
+.categoryChip {
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--border-light);
+  background: white;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+.categoryChip:hover,
+.categoryChipActive {
+  border-color: var(--primary-purple);
+  background: rgba(124, 58, 237, 0.07);
+  color: var(--primary-purple);
 }
 
 .trendingList {
@@ -70,6 +95,17 @@
 
 .trendingInfo {
   flex: 1;
+}
+
+.topicCategory {
+  display: inline-flex;
+  margin-bottom: 0.35rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.08);
+  color: var(--primary-purple);
+  font-size: 0.68rem;
+  font-weight: 700;
 }
 
 .trendingTitle {
@@ -91,6 +127,28 @@
   font-size: 0.9rem;
   line-height: 1.6;
   color: var(--text-primary);
+}
+
+.trendLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.7rem;
+  color: var(--primary-purple);
+  font-weight: 700;
+  text-decoration: none;
+}
+.trendLink:hover {
+  text-decoration: underline;
+}
+
+.trendsState {
+  padding: 1.5rem;
+  border: 1px dashed var(--border-light);
+  border-radius: 10px;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 0.9rem;
 }
 
 .expandBtn {

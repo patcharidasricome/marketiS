@@ -17,32 +17,30 @@ export async function GET() {
   }
 }
 
-/* ─── POST: append a new row ─────────────────────────────────── */
+/* ─── POST: append a new feedback row ───────────────────────── */
 
 export interface FeedbackPayload {
-  name: string;
-  role: string;
-  rating: number;
-  comment: string;
-  tags: string[];
+  name:        string;
+  type:        "Bug Report" | "Enhancement" | "Feature Request";
+  description: string;
+  extra1:      string; // severity / impact / priority
+  extra2:      string; // steps / current behavior / rationale
+  extra3:      string; // proposed improvement
 }
 
 export async function POST(req: NextRequest) {
   const scriptUrl = process.env.GOOGLE_SCRIPT_URL;
   if (!scriptUrl) {
-    return NextResponse.json(
-      { error: "GOOGLE_SCRIPT_URL is not configured" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "GOOGLE_SCRIPT_URL is not configured" }, { status: 500 });
   }
 
   const body: FeedbackPayload = await req.json();
 
-  if (!body.comment?.trim()) {
-    return NextResponse.json({ error: "Comment is required" }, { status: 400 });
+  if (!body.description?.trim()) {
+    return NextResponse.json({ error: "Description is required" }, { status: 400 });
   }
-  if (!body.rating || body.rating < 1 || body.rating > 5) {
-    return NextResponse.json({ error: "Rating must be 1–5" }, { status: 400 });
+  if (!body.type) {
+    return NextResponse.json({ error: "Feedback type is required" }, { status: 400 });
   }
 
   try {
@@ -60,11 +58,7 @@ export async function POST(req: NextRequest) {
 
     if (!contentType.includes("application/json")) {
       const text = await res.text();
-      const isLoginWall =
-        text.includes("Sign in") ||
-        text.includes("accounts.google.com") ||
-        text.includes("unable to open");
-
+      const isLoginWall = text.includes("Sign in") || text.includes("accounts.google.com") || text.includes("unable to open");
       if (isLoginWall) {
         return NextResponse.json(
           { error: "Google Apps Script requires login. Re-deploy with 'Who has access: Anyone'." },
@@ -74,9 +68,7 @@ export async function POST(req: NextRequest) {
       throw new Error(`Unexpected content-type: ${contentType}`);
     }
 
-    if (!res.ok) {
-      throw new Error(`Apps Script responded with ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`Apps Script responded with ${res.status}`);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

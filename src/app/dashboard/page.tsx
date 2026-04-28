@@ -1,39 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
-const trendingTopics = [
-  {
-    id: 0,
-    title: "mRNA Vaccine Updates",
-    meta: "5 publications • 234 mentions",
-    context:
-      "Recent developments in mRNA vaccine technology show promising results in preventing multiple variants. Key research includes enhanced stability, faster production methods, and improved delivery systems. Major players in the field are conducting Phase 3 trials.",
-  },
-  {
-    id: 1,
-    title: "CRISPR Gene Therapy Breakthroughs",
-    meta: "12 publications • 567 mentions",
-    context:
-      "CRISPR technology is rapidly advancing with new off-target editing techniques and precision improvements. Recent FDA approvals for genetic disorder treatments mark a major milestone. Clinical trials show success rates over 85% in certain applications.",
-  },
-  {
-    id: 2,
-    title: "Personalized Medicine Advances",
-    meta: "8 publications • 345 mentions",
-    context:
-      "Personalized medicine is transforming healthcare with AI-driven diagnostics and treatment plans tailored to individual genetics. Integration with genomic sequencing improves patient outcomes by 40%. Major hospitals are adopting precision medicine protocols.",
-  },
-  {
-    id: 3,
-    title: "FDA Approval Announcements",
-    meta: "3 publications • 89 mentions",
-    context:
-      "Recent FDA approvals include novel therapeutics for previously untreatable conditions. Expedited review programs are accelerating market entry for breakthrough therapies. Regulatory guidance updates support innovative treatment approaches.",
-  },
-];
+type TrendCategory = "All" | "Life Sciences" | "Utilities" | "Oil & Gas" | "SAP";
+
+type TrendTopic = {
+  id: string;
+  title: string;
+  category: Exclude<TrendCategory, "All">;
+  source: string;
+  link: string;
+  publishedAt: string;
+  traffic: string;
+  context: string;
+};
+
+const trendCategories: TrendCategory[] = ["All", "Life Sciences", "Utilities", "Oil & Gas", "SAP"];
 
 const statCards = [
   { icon: "fa-calendar-check", color: "var(--primary-purple)", value: "24",    label: "Posts Scheduled" },
@@ -42,17 +26,49 @@ const statCards = [
 ];
 
 export default function DashboardPage() {
-  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
+  const [topics, setTopics] = useState<TrendTopic[]>([]);
+  const [activeCategory, setActiveCategory] = useState<TrendCategory>("All");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [loadingTopics, setLoadingTopics] = useState(true);
+  const [trendsError, setTrendsError] = useState("");
+  const [updatedAt, setUpdatedAt] = useState("");
   const router = useRouter();
 
-  function toggleContext(id: number) {
+  useEffect(() => {
+    async function loadTrends() {
+      try {
+        const res = await fetch("/api/trends");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Unable to load trends");
+        setTopics(data.topics ?? []);
+        setUpdatedAt(data.updatedAt ?? "");
+      } catch (error) {
+        setTrendsError(error instanceof Error ? error.message : "Unable to load trends");
+      } finally {
+        setLoadingTopics(false);
+      }
+    }
+
+    loadTrends();
+  }, []);
+
+  function toggleContext(id: string) {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
-  function useTopicForContent(topic: string) {
+  function handleUseTopicForContent(topic: string) {
     sessionStorage.setItem("contentTopic", topic);
-    router.push("/generator");
+    router.push(`/generator?topic=${encodeURIComponent(topic)}`);
   }
+
+  const filteredTopics = activeCategory === "All"
+    ? trendCategories
+        .filter((category): category is Exclude<TrendCategory, "All"> => category !== "All")
+        .flatMap((category) => topics.filter((topic) => topic.category === category).slice(0, 1))
+    : topics.filter((topic) => topic.category === activeCategory);
+  const formattedUpdatedAt = updatedAt
+    ? new Date(updatedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+    : "";
 
   return (
     <div>
@@ -87,21 +103,54 @@ export default function DashboardPage() {
         </h2>
         <p className={styles.updatedNote}>
           <i className="fas fa-sync-alt" style={{ marginRight: "0.5rem" }} />
-          Updated weekly • Life Science focus
+          RSS feeds • latest 7 days • cached 12 hours{formattedUpdatedAt ? ` • ${formattedUpdatedAt}` : ""}
         </p>
 
+        <div className={styles.chipRow}>
+          {trendCategories.map((category) => (
+            <button
+              key={category}
+              className={`${styles.categoryChip}${activeCategory === category ? ` ${styles.categoryChipActive}` : ""}`}
+              onClick={() => setActiveCategory(category)}
+            >
+              {category}
+            </button>
+          ))}
+        </div>
+
         <div className={styles.trendingList}>
-          {trendingTopics.map((topic) => (
+          {loadingTopics && (
+            <div className={styles.trendsState}>
+              <i className="fas fa-spinner fa-spin" /> Loading Google Trends topics...
+            </div>
+          )}
+
+          {!loadingTopics && trendsError && (
+            <div className={styles.trendsState}>
+              <i className="fas fa-circle-exclamation" /> {trendsError}
+            </div>
+          )}
+
+          {!loadingTopics && !trendsError && filteredTopics.length === 0 && (
+            <div className={styles.trendsState}>
+              No topics available{activeCategory === "All" ? "" : ` for ${activeCategory}`}.
+            </div>
+          )}
+
+          {!loadingTopics && !trendsError && filteredTopics.map((topic) => (
             <div className="trending-item" key={topic.id}>
               <div className={styles.trendingRow}>
                 <div className={styles.trendingInfo}>
+                  <span className={styles.topicCategory}>{topic.category}</span>
                   <div className={styles.trendingTitle}>{topic.title}</div>
-                  <div className={styles.trendingMeta}>{topic.meta}</div>
+                  <div className={styles.trendingMeta}>
+                    {topic.source}{topic.traffic ? ` • ${topic.traffic}` : ""}{topic.publishedAt ? ` • ${new Date(topic.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : ""}
+                  </div>
                 </div>
                 <button
                   className="btn-primary"
                   style={{ flexShrink: 0, padding: "0.45rem 0.9rem", fontSize: "0.8rem", whiteSpace: "nowrap" }}
-                  onClick={() => useTopicForContent(topic.title)}
+                  onClick={() => handleUseTopicForContent(topic.title)}
                 >
                   <i className="fas fa-wand-magic-sparkles" /> Write Content
                 </button>
@@ -110,6 +159,11 @@ export default function DashboardPage() {
               {expanded[topic.id] && (
                 <div className={styles.contextBlock}>
                   <strong>Context:</strong> {topic.context}
+                  {topic.link && (
+                    <a href={topic.link} target="_blank" rel="noreferrer" className={styles.trendLink}>
+                      View source <i className="fas fa-arrow-up-right-from-square" />
+                    </a>
+                  )}
                 </div>
               )}
 
