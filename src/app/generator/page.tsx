@@ -14,6 +14,7 @@ type TrendTopic = {
 };
 
 type PlatformKey = "facebook" | "instagram" | "linkedin";
+type ImageMode = "banana" | "upload";
 
 const trendCategories = ["Life Sciences", "Utilities", "Oil & Gas", "SAP"];
 
@@ -51,6 +52,41 @@ function createThumbnail(dataUrl: string, size = 120): Promise<string> {
       resolve(canvas.toDataURL("image/jpeg", 0.72));
     };
     image.onerror = () => resolve("");
+    image.src = dataUrl;
+  });
+}
+
+function resizeImageForPlatform(dataUrl: string, platform: PlatformKey): Promise<string> {
+  const sizeByPlatform: Record<PlatformKey, { width: number; height: number }> = {
+    facebook: { width: 1200, height: 675 },
+    linkedin: { width: 1200, height: 675 },
+    instagram: { width: 1080, height: 1350 },
+  };
+  const { width, height } = sizeByPlatform[platform];
+
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const scale = Math.max(width / image.width, height / image.height);
+      const drawWidth = image.width * scale;
+      const drawHeight = image.height * scale;
+      const x = (width - drawWidth) / 2;
+      const y = (height - drawHeight) / 2;
+
+      ctx.drawImage(image, x, y, drawWidth, drawHeight);
+      resolve(canvas.toDataURL("image/jpeg", 0.88));
+    };
+    image.onerror = () => resolve(dataUrl);
     image.src = dataUrl;
   });
 }
@@ -545,10 +581,19 @@ function FacebookPostPreview({ caption, imageSrc }: { caption: string; imageSrc:
 
 export default function GeneratorPage() {
   const [contentIdea, setContentIdea] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
   const [author, setAuthor] = useState("");
   const [platforms, setPlatforms] = useState({ facebook: true, instagram: true, linkedin: true });
   const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [platformImages, setPlatformImages] = useState<Partial<Record<PlatformKey, string>>>({});
+  const [imageMode, setImageMode] = useState<ImageMode>("banana");
+  const [uploadExpanded, setUploadExpanded] = useState(false);
+  const [bananaPrompt, setBananaPrompt] = useState("");
+  const [generatingImage, setGeneratingImage] = useState(false);
+  const [imageError, setImageError] = useState("");
   const [generated, setGenerated] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState("");
   const [draggingOver, setDraggingOver] = useState(false);
   const [trendingChips, setTrendingChips] = useState<string[]>(fallbackTrendingChips);
   const [activeOutputPlatform, setActiveOutputPlatform] = useState<PlatformKey>("linkedin");
@@ -599,7 +644,11 @@ export default function GeneratorPage() {
 
   function handleImageFile(file: File) {
     const reader = new FileReader();
-    reader.onload = (e) => setImageSrc(e.target?.result as string);
+    reader.onload = (e) => {
+      setImageSrc(e.target?.result as string);
+      setPlatformImages({});
+      setImageError("");
+    };
     reader.readAsDataURL(file);
   }
 
@@ -608,6 +657,99 @@ export default function GeneratorPage() {
     setDraggingOver(false);
     const file = e.dataTransfer.files[0];
     if (file?.type.startsWith("image/")) handleImageFile(file);
+  }
+
+  async function handleGenerateImage() {
+    const selectedPlatforms = Object.entries(platforms)
+      .filter(([, selected]) => selected)
+      .map(([platform]) => platform as PlatformKey);
+
+    if (selectedPlatforms.length === 0) {
+      setImageError("Select at least one platform before generating an image.");
+      return;
+    }
+
+    if (!bananaPrompt.trim()) {
+      setImageError("Enter a Banana AI image prompt first.");
+      return;
+    }
+
+    setGeneratingImage(true);
+    setImageError("");
+
+    try {
+      const res = await fetch("/api/generate-image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: bananaPrompt,
+          contentIdea,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "Failed to generate image");
+
+      const variants = await Promise.all(
+        selectedPlatforms.map(async (platform) => [
+          platform,
+          await resizeImageForPlatform(json.image, platform),
+        ] as const),
+      );
+      const nextImages = Object.fromEntries(variants) as Partial<Record<PlatformKey, string>>;
+
+      setPlatformImages(nextImages);
+      setImageSrc(nextImages[selectedPlatforms[0]] ?? json.image);
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : "Failed to generate image");
+    } finally {
+      setGeneratingImage(false);
+    }
+  }
+
+  async function handleGenerateContent() {
+    const selectedPlatforms = Object.entries(platforms)
+      .filter(([, selected]) => selected)
+      .map(([platform]) => platform as PlatformKey);
+
+    if (selectedPlatforms.length === 0) {
+      setGenerateError("Select at least one platform.");
+      return;
+    }
+
+    if (!contentIdea.trim() && !sourceUrl.trim()) {
+      setGenerateError("Enter a content idea or source link first.");
+      return;
+    }
+
+    setGenerating(true);
+    setGenerateError("");
+    setGenerated(false);
+
+    try {
+      const res = await fetch("/api/generate-content", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contentIdea,
+          sourceUrl,
+          platforms: selectedPlatforms,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "Failed to generate content");
+
+      setGeneratedDrafts((prev) => ({
+        ...prev,
+        ...json.captions,
+      }));
+      setActiveOutputPlatform(selectedPlatforms[0] ?? "linkedin");
+      setEditingPlatform(null);
+      setGenerated(true);
+    } catch (err) {
+      setGenerateError(err instanceof Error ? err.message : "Failed to generate content");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   const handleSaveToContents = useCallback(async () => {
@@ -620,7 +762,8 @@ export default function GeneratorPage() {
     setSaveError("");
 
     try {
-      const thumbnailImage = imageSrc ? await createThumbnail(imageSrc, 120) : "";
+      const contentImage = platformImages.linkedin ?? platformImages.facebook ?? platformImages.instagram ?? imageSrc;
+      const thumbnailImage = contentImage ? await createThumbnail(contentImage, 120) : "";
 
       const res = await fetch("/api/contents", {
         method: "POST",
@@ -631,6 +774,7 @@ export default function GeneratorPage() {
           author: author.trim() || "Current User",
           dateCreated: new Date().toISOString(),
           dateScheduled: "",
+          status: "Drafted",
           platforms: selectedPlatforms,
           linkedinCaption: generatedDrafts.linkedin,
           facebookCaption: generatedDrafts.facebook,
@@ -661,11 +805,12 @@ export default function GeneratorPage() {
     } finally {
       setSaving(false);
     }
-  }, [author, contentIdea, generatedDrafts, imageSrc, platforms, router]);
+  }, [author, contentIdea, generatedDrafts, imageSrc, platformImages, platforms, router]);
 
   const selectedOutputPlatforms = outputPlatforms.filter(({ key }) => platforms[key]);
   const activeOutput = selectedOutputPlatforms.find(({ key }) => key === activeOutputPlatform) ?? selectedOutputPlatforms[0];
   const isEditingActiveOutput = activeOutput ? editingPlatform === activeOutput.key : false;
+  const activePreviewImage = activeOutput ? (platformImages[activeOutput.key] ?? imageSrc) : imageSrc;
 
   return (
     <div>
@@ -685,8 +830,8 @@ export default function GeneratorPage() {
           Trending topics:
         </h3>
         <div className={styles.chipRow}>
-          {trendingChips.map((chip) => (
-            <span key={chip} className="chip" onClick={() => insertTopic(chip)}>
+          {trendingChips.map((chip, i) => (
+            <span key={`${chip}-${i}`} className="chip" onClick={() => insertTopic(chip)}>
               {chip}
             </span>
           ))}
@@ -697,10 +842,16 @@ export default function GeneratorPage() {
       <div className={styles.generatorGrid}>
         {/* ── Left: Input panel ── */}
         <div className="card">
-          <h2 className={styles.cardTitle}>
-            <i className={`fas fa-pen-fancy ${styles.cardTitleIcon}`} />
-            Your Content Idea
-          </h2>
+          <div className={styles.cardTitleRow}>
+            <h2 className={styles.cardTitle}>
+              <i className={`fas fa-pen-fancy ${styles.cardTitleIcon}`} />
+              Your Content Idea
+            </h2>
+            <span className={styles.modelBadge}>
+              <i className="fas fa-bolt" aria-hidden />
+              Gemini 2.5 Flash-Lite
+            </span>
+          </div>
 
           <div style={{ marginBottom: "1.5rem" }}>
             <label style={{ display: "block", fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.95rem" }}>
@@ -713,6 +864,22 @@ export default function GeneratorPage() {
               placeholder="Enter your content idea, rough draft, or topic you want to create..."
               rows={5}
             />
+          </div>
+
+          <div style={{ marginBottom: "1.5rem" }}>
+            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.95rem" }}>
+              Source Link (Optional)
+            </label>
+            <input
+              className="form-input"
+              type="url"
+              value={sourceUrl}
+              onChange={(e) => setSourceUrl(e.target.value)}
+              placeholder="Paste an article, company page, or reference URL..."
+            />
+            <p className={styles.inputHint}>
+              The AI will read this page as context when available.
+            </p>
           </div>
 
           <div style={{ marginBottom: "1.5rem" }}>
@@ -767,43 +934,125 @@ export default function GeneratorPage() {
 
           <div style={{ marginBottom: "1.5rem" }}>
             <label style={{ display: "block", fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.95rem" }}>
-              Upload Image (Optional)
+              Visual Asset (Optional)
             </label>
-            <div
-              className={`${styles.dropZone}${draggingOver ? ` ${styles.dropZoneDragging}` : ""}`}
-              onClick={() => fileInputRef.current?.click()}
-              onDragOver={(e) => { e.preventDefault(); setDraggingOver(true); }}
-              onDragLeave={() => setDraggingOver(false)}
-              onDrop={handleDrop}
-            >
-              {imageSrc ? (
-                <img src={imageSrc} alt="Preview" className={styles.imageThumb} />
-              ) : (
-                <>
-                  <div className={styles.dropIcon}>
-                    <i className="fas fa-cloud-arrow-up" />
-                  </div>
-                  <div className={styles.dropLabel}>Drag and drop or click to upload</div>
-                  <div className={styles.dropHint}>Recommended: 1200×1200px or larger</div>
-                </>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: "none" }}
-                onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); }}
-              />
+            <div className={styles.visualModeGrid}>
+              <button
+                type="button"
+                className={`${styles.visualModeCard}${imageMode === "banana" ? ` ${styles.visualModeCardActive}` : ""}`}
+                onClick={() => setImageMode("banana")}
+              >
+                <span className={styles.visualModeIcon}>
+                  <i className="fas fa-seedling" aria-hidden />
+                </span>
+                <span className={styles.visualModeText}>
+                  <strong>Banana AI</strong>
+                  <small>Generate one design, then resize it per platform.</small>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.visualModeCard}${imageMode === "upload" ? ` ${styles.visualModeCardActive}` : ""}`}
+                onClick={() => {
+                  setImageMode("upload");
+                  setUploadExpanded((prev) => !prev);
+                }}
+              >
+                <span className={styles.visualModeIcon}>
+                  <i className="fas fa-cloud-arrow-up" aria-hidden />
+                </span>
+                <span className={styles.visualModeText}>
+                  <strong>Upload Image</strong>
+                  <small>Use your own image for every selected platform.</small>
+                </span>
+              </button>
             </div>
+
+            {imageMode === "banana" && (
+              <div className={styles.bananaPanel}>
+                <div className={styles.bananaPanelHeader}>
+                  <span>Banana AI</span>
+                  <small>Gemini 2.5 Flash Image</small>
+                </div>
+                <textarea
+                  className={styles.bananaPrompt}
+                  value={bananaPrompt}
+                  onChange={(e) => setBananaPrompt(e.target.value)}
+                  rows={4}
+                  placeholder="Describe the visual direction, e.g. enterprise AI workflow for life sciences, clean compliance-focused design, subtle iSSi brand colors..."
+                />
+                <button
+                  type="button"
+                  className={styles.bananaGenerateBtn}
+                  onClick={handleGenerateImage}
+                  disabled={generatingImage}
+                >
+                  {generatingImage ? (
+                    <><i className="fas fa-spinner fa-spin" /> Generating image...</>
+                  ) : (
+                    <><i className="fas fa-wand-magic-sparkles" /> Generate Platform Images</>
+                  )}
+                </button>
+                <p className={styles.inputHint}>
+                  Creates matching 16:9 images for LinkedIn/Facebook and a 4:5 version for Instagram.
+                </p>
+              </div>
+            )}
+
+            {imageMode === "upload" && uploadExpanded && (
+              <div
+                className={`${styles.dropZone} ${styles.dropZoneExpanded}${draggingOver ? ` ${styles.dropZoneDragging}` : ""}`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setDraggingOver(true); }}
+                onDragLeave={() => setDraggingOver(false)}
+                onDrop={handleDrop}
+              >
+                {imageSrc ? (
+                  <img src={imageSrc} alt="Preview" className={styles.imageThumb} />
+                ) : (
+                  <>
+                    <div className={styles.dropIcon}>
+                      <i className="fas fa-cloud-arrow-up" />
+                    </div>
+                    <div className={styles.dropLabel}>Drag and drop or click to upload</div>
+                    <div className={styles.dropHint}>Recommended: 1200×1200px or larger</div>
+                  </>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImageFile(f); }}
+                />
+              </div>
+            )}
+
+            {imageError && (
+              <p style={{ marginTop: "0.75rem", color: "var(--error)", fontSize: "0.82rem" }}>
+                <i className="fas fa-circle-exclamation" /> {imageError}
+              </p>
+            )}
           </div>
 
           <button
             className="btn-primary"
             style={{ width: "100%", justifyContent: "center", padding: "1rem" }}
-            onClick={() => setGenerated(true)}
+            onClick={handleGenerateContent}
+            disabled={generating}
           >
-            <i className="fas fa-wand-magic-sparkles" /> Generate Content with AI
+            {generating ? (
+              <><i className="fas fa-spinner fa-spin" /> Generating...</>
+            ) : (
+              <><i className="fas fa-wand-magic-sparkles" /> Generate Content with AI</>
+            )}
           </button>
+          {generateError && (
+            <p style={{ marginTop: "0.75rem", color: "var(--error)", fontSize: "0.82rem" }}>
+              <i className="fas fa-circle-exclamation" /> {generateError}
+            </p>
+          )}
         </div>
 
         {/* ── Right: Generated output panel ── */}
@@ -866,17 +1115,17 @@ export default function GeneratorPage() {
                     />
                   ) : (
                     activeOutput.key === "facebook" && generated ? (
-                      <FacebookPostPreview caption={generatedDrafts.facebook} imageSrc={imageSrc} />
+                      <FacebookPostPreview caption={generatedDrafts.facebook} imageSrc={activePreviewImage} />
                     ) : activeOutput.key === "linkedin" && generated ? (
                       <LinkedInPostPreview
                         caption={generatedDrafts.linkedin}
-                        imageSrc={imageSrc}
+                        imageSrc={activePreviewImage}
                         authorName="iSSi - Integration Solution Services Inc."
                       />
                     ) : activeOutput.key === "instagram" && generated ? (
                       <InstagramPostPreview
                         caption={generatedDrafts.instagram}
-                        imageSrc={imageSrc}
+                        imageSrc={activePreviewImage}
                         authorName="iSSi"
                       />
                     ) : (

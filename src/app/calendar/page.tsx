@@ -105,8 +105,8 @@ export default function CalendarPage() {
             Upcoming Posts
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-            {upcomingPosts.map((post) => (
-              <div className="trending-item" key={post.title}>
+            {upcomingPosts.map((post, i) => (
+              <div className="trending-item" key={`${post.title}-${i}`}>
                 <div className={styles.upcomingTitle}>{post.title}</div>
                 <div className={styles.upcomingMeta}>{post.meta}</div>
               </div>

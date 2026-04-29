@@ -5,14 +5,68 @@
   gap: 1rem;
   flex-wrap: wrap;
   align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tabsWrap {
   margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  background: rgba(124, 58, 237, 0.06);
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+}
+
+.tab {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--primary-purple);
+  outline-offset: 2px;
+}
+
+.tabActive {
+  background: #fff;
+  color: var(--primary-purple);
+  box-shadow: 0 1px 4px rgba(124, 58, 237, 0.15);
+}
+
+.tab.tabActive:hover {
+  background: #fff;
+  color: var(--primary-purple);
 }
 
 .statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.3rem 0.6rem;
-  border-radius: 4px;
+  border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
+  color: var(--primary-purple);
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.18);
 }
 
 .platformRow {
@@ -49,6 +103,56 @@
 
 .contentTitle {
   font-weight: 600;
+}
+
+.actionCell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.scheduleLink {
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+/** Equal vertical padding for Edit / Schedule / Archive in the contents table */
+.actionToolbarBtn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding-block: 0.5rem !important;
+  padding-inline: 0.75rem !important;
+  font-size: 0.85rem !important;
+  line-height: 1.25;
+}
+
+.archiveBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(146, 64, 14, 0.35);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(251, 191, 36, 0.18);
+  color: #92400e;
+  transition: background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+}
+
+.archiveBtn:hover:not(:disabled) {
+  background: rgba(251, 191, 36, 0.28);
+  border-color: rgba(146, 64, 14, 0.45);
+}
+
+.archiveBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .contentSubtitle {
