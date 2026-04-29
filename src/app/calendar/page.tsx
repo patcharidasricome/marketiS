@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import styles from "./page.module.css";
 import { FacebookIcon, InstagramIcon, LinkedInIcon } from "@/components/PlatformIcons";
 
@@ -50,7 +51,64 @@ const upcomingPosts = [
   { title: "CRISPR Gene Therapy",   meta: "April 11 • 2:30 PM" },
 ];
 
+type SelectedContent = {
+  id: string;
+  title: string;
+  author: string;
+};
+
+function readSelectedContentFromUrl(): SelectedContent | null {
+  if (typeof window === "undefined") return null;
+
+  const params = new URLSearchParams(window.location.search);
+  const fromContents = params.get("from") === "contents";
+  const title = params.get("title")?.trim();
+
+  if (!fromContents || !title) return null;
+
+  return {
+    id: params.get("id") || "",
+    title,
+    author: params.get("author")?.trim() || "Current User",
+  };
+}
+
 export default function CalendarPage() {
+  const [selectedContent] = useState<SelectedContent | null>(() => readSelectedContentFromUrl());
+  const [activityStatus, setActivityStatus] = useState("");
+  const [activityError, setActivityError] = useState("");
+  const [loggingAction, setLoggingAction] = useState<"schedule" | "reschedule" | null>(null);
+
+  async function logScheduleActivity(kind: "schedule" | "reschedule") {
+    if (!selectedContent) return;
+
+    setLoggingAction(kind);
+    setActivityError("");
+    setActivityStatus("");
+
+    try {
+      const res = await fetch("/api/activity", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          item: selectedContent.title,
+          action: kind === "schedule" ? "scheduled content" : "rescheduled content",
+          author: selectedContent.author,
+          date: new Date().toISOString(),
+          remarks: kind === "schedule" ? "from Posting Calendar" : "updated from Posting Calendar",
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error || "Could not log activity.");
+
+      setActivityStatus(kind === "schedule" ? "Schedule activity logged." : "Reschedule activity logged.");
+    } catch (err) {
+      setActivityError(err instanceof Error ? err.message : "Could not log activity.");
+    } finally {
+      setLoggingAction(null);
+    }
+  }
+
   return (
     <div>
       {/* Page header */}
@@ -62,6 +120,43 @@ export default function CalendarPage() {
           Schedule, reschedule, and manage your posts. Click posts to edit/delete, drag to reschedule.
         </p>
       </div>
+
+      {selectedContent && (
+        <div className={styles.scheduleContextCard}>
+          <div>
+            <div className={styles.scheduleContextEyebrow}>Scheduling from Contents Library</div>
+            <div className={styles.scheduleContextTitle}>{selectedContent.title}</div>
+          </div>
+          <div className={styles.scheduleActionRow}>
+            <button
+              type="button"
+              className="btn-primary btn-small"
+              disabled={loggingAction !== null}
+              onClick={() => logScheduleActivity("schedule")}
+            >
+              {loggingAction === "schedule" ? (
+                <><i className="fas fa-spinner fa-spin" /> Scheduling...</>
+              ) : (
+                <><i className="fas fa-calendar-plus" /> Mark Scheduled</>
+              )}
+            </button>
+            <button
+              type="button"
+              className="btn-secondary btn-small"
+              disabled={loggingAction !== null}
+              onClick={() => logScheduleActivity("reschedule")}
+            >
+              {loggingAction === "reschedule" ? (
+                <><i className="fas fa-spinner fa-spin" /> Rescheduling...</>
+              ) : (
+                <><i className="fas fa-calendar-days" /> Mark Rescheduled</>
+              )}
+            </button>
+          </div>
+          {activityStatus && <p className={styles.activitySuccess}>{activityStatus}</p>}
+          {activityError && <p className={styles.activityError}>{activityError}</p>}
+        </div>
+      )}
 
       <div className={styles.calendarWrapper}>
         {/* ── Main calendar ── */}

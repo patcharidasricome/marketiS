@@ -309,7 +309,7 @@ export default function ContentsPage() {
                       Edit
                     </button>
                     <Link
-                      href={`/calendar?from=contents&id=${encodeURIComponent(String(row.id))}&title=${encodeURIComponent(row.title)}`}
+                      href={`/calendar?from=contents&id=${encodeURIComponent(String(row.id))}&title=${encodeURIComponent(row.title)}&author=${encodeURIComponent(row.author)}`}
                       className={`btn-secondary btn-small ${styles.scheduleLink} ${styles.actionToolbarBtn}`}
                       aria-label={`Schedule ${row.title}`}
                     >

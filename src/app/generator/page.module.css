@@ -42,6 +42,15 @@
   background-clip: text;
 }
 
+.generationMetaBadges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  max-width: 62%;
+  min-width: 0;
+}
+
 .modelBadge {
   display: inline-flex;
   align-items: center;
@@ -54,6 +63,35 @@
   font-size: 0.75rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.promptBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(26, 35, 126, 0.16);
+  background: rgba(26, 35, 126, 0.06);
+  color: var(--primary-navy);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 720px) {
+  .cardTitleRow {
+    flex-direction: column;
+  }
+
+  .generationMetaBadges {
+    justify-content: flex-start;
+    max-width: 100%;
+  }
 }
 
 /* ─── Drag-and-drop upload zone ──────────────────────────────── */
@@ -123,9 +161,7 @@
   padding: 1rem;
   border: 1px solid rgba(124, 58, 237, 0.16);
   border-radius: 14px;
-  background:
-    linear-gradient(135deg, rgba(124, 58, 237, 0.06), rgba(6, 182, 212, 0.04)),
-    #fff;
+  background:  rgba(26, 35, 126, 0.06);
 }
 
 .bananaPanelHeader {
@@ -179,7 +215,7 @@
   cursor: pointer;
   color: #fff;
   font-weight: 700;
-  background: linear-gradient(135deg, #f59e0b, var(--primary-purple));
+  background: #f59e0b;
   transition: opacity 0.18s ease, transform 0.18s ease;
 }
 

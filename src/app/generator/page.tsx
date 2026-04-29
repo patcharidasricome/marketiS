@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { FacebookIcon, InstagramIcon, LinkedInIcon } from "@/components/PlatformIcons";
+import { externalMarketingInstructions } from "@/lib/marketingPrompt";
 import styles from "./page.module.css";
 
 const fallbackTrendingChips = ["mRNA Vaccines", "CRISPR Gene Therapy", "Personalized Medicine", "FDA Approvals"];
@@ -17,6 +18,37 @@ type PlatformKey = "facebook" | "instagram" | "linkedin";
 type ImageMode = "banana" | "upload";
 
 const trendCategories = ["Life Sciences", "Utilities", "Oil & Gas", "SAP"];
+const SELECTED_PROMPT_STORAGE_KEY = "marketiS-selected-content-prompt";
+
+type StoredPrompt = {
+  id: string;
+  name: string;
+  content: string;
+};
+
+function readSelectedPrompt(): StoredPrompt {
+  if (typeof window === "undefined") {
+    return {
+      id: "default-issi-content-generation",
+      name: "iSSi Default Content Generation Prompt",
+      content: externalMarketingInstructions,
+    };
+  }
+
+  try {
+    const raw = localStorage.getItem(SELECTED_PROMPT_STORAGE_KEY);
+    if (!raw) throw new Error("No selected prompt");
+    const parsed = JSON.parse(raw) as StoredPrompt;
+    if (!parsed.content?.trim()) throw new Error("Invalid selected prompt");
+    return parsed;
+  } catch {
+    return {
+      id: "default-issi-content-generation",
+      name: "iSSi Default Content Generation Prompt",
+      content: externalMarketingInstructions,
+    };
+  }
+}
 
 /** True when caption Promotes link previews (http(s) or www.). */
 function captionContainsHttpLike(text: string): boolean {
@@ -580,6 +612,7 @@ function FacebookPostPreview({ caption, imageSrc }: { caption: string; imageSrc:
 }
 
 export default function GeneratorPage() {
+  const [selectedPrompt, setSelectedPrompt] = useState<StoredPrompt>(() => readSelectedPrompt());
   const [contentIdea, setContentIdea] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [author, setAuthor] = useState("");
@@ -603,6 +636,16 @@ export default function GeneratorPage() {
   const [saveError, setSaveError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    const syncSelectedPrompt = () => setSelectedPrompt(readSelectedPrompt());
+    window.addEventListener("focus", syncSelectedPrompt);
+    window.addEventListener("storage", syncSelectedPrompt);
+    return () => {
+      window.removeEventListener("focus", syncSelectedPrompt);
+      window.removeEventListener("storage", syncSelectedPrompt);
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -733,6 +776,7 @@ export default function GeneratorPage() {
           contentIdea,
           sourceUrl,
           platforms: selectedPlatforms,
+          promptInstructions: selectedPrompt.content,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -792,7 +836,7 @@ export default function GeneratorPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           item: title,
-          action: "has saved to Contents Library",
+          action: "created content in Contents Library",
           author: author.trim() || "Current User",
           date: new Date().toISOString(),
           remarks: "generated from Content Generator",
@@ -847,10 +891,16 @@ export default function GeneratorPage() {
               <i className={`fas fa-pen-fancy ${styles.cardTitleIcon}`} />
               Your Content Idea
             </h2>
-            <span className={styles.modelBadge}>
-              <i className="fas fa-bolt" aria-hidden />
-              Gemini 2.5 Flash-Lite
-            </span>
+            <div className={styles.generationMetaBadges}>
+              <span className={styles.promptBadge} title={selectedPrompt.name}>
+                <i className="fas fa-scroll" aria-hidden />
+                Prompt: {selectedPrompt.name}
+              </span>
+              <span className={styles.modelBadge}>
+                <i className="fas fa-bolt" aria-hidden />
+                Gemini 2.5 Flash-Lite
+              </span>
+            </div>
           </div>
 
           <div style={{ marginBottom: "1.5rem" }}>

@@ -25,6 +25,64 @@
   background-clip: text;
 }
 
+.scheduleContextCard {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid rgba(124, 58, 237, 0.16);
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.06), rgba(124, 58, 237, 0.06));
+}
+
+.scheduleContextEyebrow {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.scheduleContextTitle {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.scheduleActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.activitySuccess,
+.activityError {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.activitySuccess {
+  color: #15803d;
+}
+
+.activityError {
+  color: var(--error);
+}
+
+@media (max-width: 720px) {
+  .scheduleContextCard {
+    grid-template-columns: 1fr;
+  }
+
+  .scheduleActionRow {
+    justify-content: flex-start;
+  }
+}
+
 /* ─── Day-of-week header row ─────────────────────────────────── */
 .dayHeaders {
   display: grid;

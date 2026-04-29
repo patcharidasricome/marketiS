@@ -7,6 +7,7 @@ type GenerateRequest = {
   contentIdea?: string;
   sourceUrl?: string;
   platforms?: PlatformKey[];
+  promptInstructions?: string;
 };
 
 type GeminiPart = {
@@ -84,8 +85,9 @@ async function readSourceUrl(sourceUrl: string) {
 
 function buildPrompt(input: GenerateRequest, sourceText: string) {
   const platforms = (input.platforms ?? []).join(", ");
+  const systemPrompt = input.promptInstructions?.trim() || externalMarketingInstructions;
   return `
-${externalMarketingInstructions}
+${systemPrompt}
 
 Task:
 Write optimized social media post copy for the selected platforms only.
