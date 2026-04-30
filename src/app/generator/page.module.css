@@ -9,11 +9,76 @@
   .generatorGrid { grid-template-columns: 1fr; }
 }
 
-.chipRow {
+.ideaTrendSection {
+  margin-bottom: 1rem;
+}
+
+.ideaTrendHeader {
   display: flex;
-  gap: 0.8rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ideaTrendLabel {
+  display: block;
+  margin-bottom: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.ideaTrendSuggestBtn {
+  appearance: none;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0.32rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(124, 58, 237, 0.35);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.18), rgba(26, 35, 126, 0.14));
+  color: var(--text-primary);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ideaTrendSuggestBtn:hover {
+  border-color: var(--primary-purple);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.28), rgba(26, 35, 126, 0.2));
+}
+
+.ideaTrendSuggestBtn:focus-visible {
+  outline: 2px solid var(--primary-purple);
+  outline-offset: 2px;
+}
+
+.ideaTrendChipRow {
+  display: flex;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+.ideaTrendChip {
+  appearance: none;
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.06), rgba(124, 58, 237, 0.07));
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  line-height: 1.25;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.ideaTrendChip:hover {
+  border-color: var(--primary-purple);
+  background: linear-gradient(135deg, rgba(26, 35, 126, 0.14), rgba(124, 58, 237, 0.14));
 }
 
 /* ─── Card title (shared pattern, scoped to generator) ───────── */
@@ -42,55 +107,93 @@
   background-clip: text;
 }
 
-.generationMetaBadges {
+.currentToolPanel {
+  margin-bottom: 1.25rem;
+}
+
+.currentToolGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  overflow: visible;
+  background: rgba(175, 175, 175, 0.06);
+  text-wrap: wrap;
+}
+
+.currentToolGridTitle {
+  grid-column: 1 / -1;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.currentToolCell {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.45rem;
-  max-width: 62%;
+  flex-direction: column;
   min-width: 0;
 }
 
-.modelBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.65rem;
-  border-radius: 999px;
-  border: 1px solid rgba(124, 58, 237, 0.18);
-  background: rgba(124, 58, 237, 0.08);
+.currentToolCell:nth-child(2) {
+  border-right: 1px solid var(--border-light);
+}
+
+.currentToolCellBody {
+  position: relative;
+  overflow: visible;
+  flex: 1;
+  min-width: 0;
+  padding: 0.6rem 2.75rem 2rem 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-align: left;
+  overflow: hidden;
+}
+
+.currentToolCellLabel {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+
+}
+
+.currentToolCellBgIcon {
+  position: absolute;
+  right: 0.25rem;
+  bottom: -1rem;
+  z-index: 0;
+  font-size: 5rem;
+  line-height: 1;
   color: var(--primary-purple);
-  font-size: 0.75rem;
-  font-weight: 700;
-  white-space: nowrap;
+  rotate: 12deg;
+  opacity: 0.05;
+  pointer-events: none;
 }
 
-.promptBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  max-width: 100%;
+.currentToolCellText {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
   min-width: 0;
-  padding: 0.4rem 0.65rem;
-  border-radius: 999px;
-  border: 1px solid rgba(26, 35, 126, 0.16);
-  background: rgba(26, 35, 126, 0.06);
-  color: var(--primary-navy);
-  font-size: 0.75rem;
-  font-weight: 700;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
 }
 
 @media (max-width: 720px) {
   .cardTitleRow {
     flex-direction: column;
-  }
-
-  .generationMetaBadges {
-    justify-content: flex-start;
-    max-width: 100%;
   }
 }
 
@@ -403,23 +506,26 @@
   margin-bottom: 1.5rem;
 }
 
-/* ─── Image preview aspect ratio containers ──────────────────── */
-.preview169 {
-  aspect-ratio: 16 / 9;
+/* ─── Image preview aspect containers (match exported pixel ratios) ─ */
+.preview11 {
+  aspect-ratio: 1 / 1;
   background: #f9fafb;
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 0.5rem;
 }
-.preview34 {
-  aspect-ratio: 3 / 4;
+
+/* 1080×1350 → 4:5 vertical */
+.preview45 {
+  aspect-ratio: 4 / 5;
   background: #f9fafb;
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 0.5rem;
 }
-.preview169 img,
-.preview34 img {
+
+.preview11 img,
+.preview45 img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -577,15 +683,17 @@
 
 .facebookPostImageWrapper {
   width: 100%;
+  aspect-ratio: 1 / 1;
   background: #f0f2f5;
   border-top: 1px solid #e5e7eb;
   border-bottom: 1px solid #e5e7eb;
+  overflow: hidden;
 }
 
 .facebookPostImageWrapper img {
   display: block;
   width: 100%;
-  max-height: 340px;
+  height: 100%;
   object-fit: cover;
 }
 
@@ -772,19 +880,20 @@
   align-items: stretch;
   text-decoration: none;
   color: inherit;
-  min-height: 72px;
+  min-height: 96px;
 }
 
 .linkedinArticleThumbWrap {
-  flex: 0 0 128px;
-  width: 128px;
+  flex: 0 0 120px;
+  width: 120px;
+  aspect-ratio: 1 / 1;
   background: #e9e8e5;
+  align-self: center;
 }
 
 .linkedinArticleThumb {
   width: 100%;
   height: 100%;
-  min-height: 72px;
   object-fit: cover;
   display: block;
 }
@@ -1123,7 +1232,7 @@
 .linkedinPersonalMediaAspect {
   display: block;
   overflow: hidden;
-  aspect-ratio: 5 / 3;
+  aspect-ratio: 1 / 1;
   background: #ececec;
 }
 
@@ -1437,6 +1546,7 @@
 .igMediaInner {
   position: relative;
   width: 100%;
+  /* Exported Instagram asset: 1080×1350 (4:5) */
   aspect-ratio: 4 / 5;
   background: #fafafa;
 }

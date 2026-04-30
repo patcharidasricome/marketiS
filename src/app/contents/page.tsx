@@ -8,6 +8,8 @@ import styles from "./page.module.css";
 type ContentItem = {
   id: string | number;
   thumbnailImage: string;
+  /** Full-resolution image on Drive — populated after Apps Script upload */
+  driveImageUrl?: string;
   title: string;
   author: string;
   dateCreated: string;
@@ -135,6 +137,7 @@ export default function ContentsPage() {
         const rows: ContentItem[] = (json.data ?? []).map((row: ContentItem, index: number) => ({
           id: row.id ?? index + 1,
           thumbnailImage: row.thumbnailImage || "",
+          driveImageUrl: typeof row.driveImageUrl === "string" ? row.driveImageUrl : undefined,
           title: row.title || "Untitled Content",
           author: row.author || "Current User",
           dateCreated: row.dateCreated || "",
@@ -291,6 +294,16 @@ export default function ContentsPage() {
                 </td>
                 <td>
                   <div className={styles.contentTitle}>{row.title}</div>
+                  {row.driveImageUrl ? (
+                    <a
+                      href={row.driveImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: "0.72rem", color: "var(--primary-purple)" }}
+                    >
+                      Full image (Drive)
+                    </a>
+                  ) : null}
                 </td>
                 <td>{row.author}</td>
                 <td>{formatDate(row.dateCreated)}</td>

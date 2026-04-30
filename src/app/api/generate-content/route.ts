@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { externalMarketingInstructions } from "@/lib/marketingPrompt";
+import {
+  assistantMessageText,
+  getOpenRouterApiKey,
+  openRouterChat,
+  resolveOpenRouterTextModel,
+} from "@/lib/openrouter";
 
 type PlatformKey = "facebook" | "instagram" | "linkedin";
 
@@ -10,22 +16,6 @@ type GenerateRequest = {
   promptInstructions?: string;
 };
 
-type GeminiPart = {
-  text?: string;
-};
-
-type GeminiResponse = {
-  candidates?: Array<{
-    content?: {
-      parts?: GeminiPart[];
-    };
-  }>;
-  error?: {
-    message?: string;
-  };
-};
-
-const DEFAULT_MODEL = "gemini-2.5-flash-lite";
 const MAX_SOURCE_CHARS = 8000;
 
 function stripHtml(html: string) {
@@ -62,15 +52,31 @@ async function readSourceUrl(sourceUrl: string) {
   const timeout = setTimeout(() => controller.abort(), 9000);
 
   try {
+    let refererOrigin: string;
+    try {
+      refererOrigin = new URL(sourceUrl).origin;
+    } catch {
+      refererOrigin = "";
+    }
+
     const res = await fetch(sourceUrl, {
       signal: controller.signal,
       headers: {
-        "user-agent": "Mozilla/5.0 (compatible; MarketiSContentBot/1.0)",
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        ...(refererOrigin ? { Referer: `${refererOrigin}/` } : {}),
       },
       cache: "no-store",
     });
 
     if (!res.ok) {
+      if (res.status === 403) {
+        throw new Error(
+          "Could not read source link (403). That site often blocks server fetches — clear Source Link and paste the text into Content Idea, or try a simpler public article URL.",
+        );
+      }
       throw new Error(`Could not read source link (${res.status}).`);
     }
 
@@ -131,9 +137,8 @@ function extractJsonObject(text: string) {
 }
 
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "GEMINI_API_KEY is not configured." }, { status: 500 });
+  if (!getOpenRouterApiKey()) {
+    return NextResponse.json({ error: "OPENROUTER_API_KEY is not configured." }, { status: 500 });
   }
 
   const body = (await req.json()) as GenerateRequest;
@@ -151,32 +156,18 @@ export async function POST(req: NextRequest) {
 
   try {
     const sourceText = body.sourceUrl?.trim() ? await readSourceUrl(body.sourceUrl.trim()) : "";
-    const model = process.env.GEMINI_MODEL || DEFAULT_MODEL;
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
+    const model = resolveOpenRouterTextModel();
+    const prompt = buildPrompt({ ...body, platforms: selectedPlatforms }, sourceText);
 
-    const geminiRes = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: buildPrompt({ ...body, platforms: selectedPlatforms }, sourceText) }],
-          },
-        ],
-        generationConfig: {
-          temperature: 0.65,
-          responseMimeType: "application/json",
-        },
-      }),
+    const orJson = await openRouterChat({
+      model,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.65,
+      response_format: { type: "json_object" },
     });
 
-    const geminiJson = (await geminiRes.json()) as GeminiResponse;
-    if (!geminiRes.ok) {
-      throw new Error(geminiJson.error?.message || `Gemini responded with ${geminiRes.status}`);
-    }
-
-    const text = geminiJson.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "";
+    const rawContent = orJson.choices?.[0]?.message?.content;
+    const text = assistantMessageText(rawContent);
     const parsed = extractJsonObject(text);
     const captions = Object.fromEntries(
       selectedPlatforms.map((platform) => [platform, parsed[platform]?.trim() || ""]),

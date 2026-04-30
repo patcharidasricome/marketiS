@@ -1,30 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { externalMarketingInstructions } from "@/lib/marketingPrompt";
-
-type GeminiPart = {
-  text?: string;
-  inlineData?: {
-    mimeType?: string;
-    data?: string;
-  };
-  inline_data?: {
-    mime_type?: string;
-    data?: string;
-  };
-};
-
-type GeminiResponse = {
-  candidates?: Array<{
-    content?: {
-      parts?: GeminiPart[];
-    };
-  }>;
-  error?: {
-    message?: string;
-  };
-};
-
-const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image";
+import {
+  extractGeneratedImageFromOpenRouterMessage,
+  getOpenRouterApiKey,
+  openRouterChat,
+  resolveOpenRouterImageModel,
+} from "@/lib/openrouter";
 
 function buildImagePrompt(prompt: string, contentIdea: string) {
   return `
@@ -42,33 +23,15 @@ Visual direction:
 - Enterprise B2B AI marketing visual.
 - Professional, credible, clean, and modern.
 - Suitable for life sciences, utilities, oil & gas, SAP, or enterprise AI audiences.
-- Keep key subjects centered so the image can crop safely to 16:9 and 4:5.
+- Keep key subjects centered so the image can crop safely to 1:1 (1080×1080) and 4:5 vertical (1080×1350).
 - Avoid tiny text, fake logos, unreadable UI, exaggerated claims, or unrealistic scientific/medical claims.
 - Do not use the iSSi logo unless explicitly requested.
 `.trim();
 }
 
-function extractInlineImage(json: GeminiResponse) {
-  const parts = json.candidates?.[0]?.content?.parts ?? [];
-  for (const part of parts) {
-    const inline = part.inlineData ?? (part.inline_data
-      ? { mimeType: part.inline_data.mime_type, data: part.inline_data.data }
-      : undefined);
-
-    if (inline?.data) {
-      return {
-        mimeType: inline.mimeType || "image/png",
-        data: inline.data,
-      };
-    }
-  }
-  return null;
-}
-
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json({ error: "GEMINI_API_KEY is not configured." }, { status: 500 });
+  if (!getOpenRouterApiKey()) {
+    return NextResponse.json({ error: "OPENROUTER_API_KEY is not configured." }, { status: 500 });
   }
 
   const body = (await req.json()) as { prompt?: string; contentIdea?: string };
@@ -77,33 +40,26 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const model = process.env.GEMINI_IMAGE_MODEL || DEFAULT_IMAGE_MODEL;
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
+    const model = resolveOpenRouterImageModel();
+    const userText = buildImagePrompt(body.prompt.trim(), body.contentIdea?.trim() || "");
 
-    const geminiRes = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: buildImagePrompt(body.prompt.trim(), body.contentIdea?.trim() || "") }],
-          },
-        ],
-        generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"],
+    const orJson = await openRouterChat({
+      model,
+      modalities: ["text", "image"],
+      messages: [
+        {
+          role: "user",
+          content: [{ type: "text", text: userText }],
         },
-      }),
+      ],
     });
 
-    const geminiJson = (await geminiRes.json()) as GeminiResponse;
-    if (!geminiRes.ok) {
-      throw new Error(geminiJson.error?.message || `Gemini responded with ${geminiRes.status}`);
-    }
-
-    const image = extractInlineImage(geminiJson);
+    const message = orJson.choices?.[0]?.message;
+    const image = await extractGeneratedImageFromOpenRouterMessage(message);
     if (!image) {
-      throw new Error("Gemini did not return an image.");
+      throw new Error(
+        "The image model did not return image data (expected OpenRouter message.images). Try OPENROUTER_IMAGE_MODEL=google/gemini-2.5-flash-image or check credits / model access.",
+      );
     }
 
     return NextResponse.json({

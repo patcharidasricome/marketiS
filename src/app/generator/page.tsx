@@ -60,6 +60,22 @@ function instagramHandleFromAuthor(name: string): string {
   return raw || "issi_official";
 }
 
+/** Drive filename for upload (JPEG — smaller payload for Apps Script). */
+function buildDriveImageFileName(authorRaw: string, contentIdeaRaw: string): string {
+  const clean = (s: string, max: number) =>
+    s
+      .replace(/[/\\:*?"<>|\u0000-\u001f]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, max);
+
+  const authorPart = clean(authorRaw.trim(), 80) || "Author";
+  const ideaPart = clean(contentIdeaRaw.trim(), 160) || "Untitled Content";
+  const stem = `${authorPart}_${ideaPart}`.trim();
+  const capped = stem.slice(0, 220);
+  return `${capped}.jpg`;
+}
+
 function createThumbnail(dataUrl: string, size = 120): Promise<string> {
   return new Promise((resolve) => {
     const image = new Image();
@@ -88,10 +104,14 @@ function createThumbnail(dataUrl: string, size = 120): Promise<string> {
   });
 }
 
-function resizeImageForPlatform(dataUrl: string, platform: PlatformKey): Promise<string> {
+function resizeImageForPlatform(
+  dataUrl: string,
+  platform: PlatformKey,
+  output: "jpeg" | "png" = "jpeg",
+): Promise<string> {
   const sizeByPlatform: Record<PlatformKey, { width: number; height: number }> = {
-    facebook: { width: 1200, height: 675 },
-    linkedin: { width: 1200, height: 675 },
+    facebook: { width: 1080, height: 1080 },
+    linkedin: { width: 1080, height: 1080 },
     instagram: { width: 1080, height: 1350 },
   };
   const { width, height } = sizeByPlatform[platform];
@@ -116,11 +136,18 @@ function resizeImageForPlatform(dataUrl: string, platform: PlatformKey): Promise
       const y = (height - drawHeight) / 2;
 
       ctx.drawImage(image, x, y, drawWidth, drawHeight);
-      resolve(canvas.toDataURL("image/jpeg", 0.88));
+      resolve(output === "png" ? canvas.toDataURL("image/png") : canvas.toDataURL("image/jpeg", 0.88));
     };
     image.onerror = () => resolve(dataUrl);
     image.src = dataUrl;
   });
+}
+
+/** Platform used for the Drive export (matches aspect of first selected platform in priority order). */
+function primaryPlatformForDrive(selection: Record<PlatformKey, boolean>): PlatformKey {
+  if (selection.linkedin) return "linkedin";
+  if (selection.facebook) return "facebook";
+  return "instagram";
 }
 
 const generatedContent = {
@@ -139,9 +166,9 @@ const outputPlatforms: Array<{
   previewClass: string;
   icon: React.ReactNode;
 }> = [
-  { key: "linkedin", label: "LinkedIn", aspectLabel: "LinkedIn (16:9)", previewClass: "preview169", icon: <LinkedInIcon size={16} /> },
-  { key: "facebook", label: "Facebook", aspectLabel: "Facebook (16:9)", previewClass: "preview169", icon: <FacebookIcon size={16} /> },
-  { key: "instagram", label: "Instagram", aspectLabel: "Instagram (4:5 feed)", previewClass: "preview34", icon: <InstagramIcon size={16} id="output-tab" /> },
+  { key: "linkedin", label: "LinkedIn", aspectLabel: "LinkedIn (1080×1080, 1:1)", previewClass: "preview11", icon: <LinkedInIcon size={16} /> },
+  { key: "facebook", label: "Facebook", aspectLabel: "Facebook (1080×1080, 1:1)", previewClass: "preview11", icon: <FacebookIcon size={16} /> },
+  { key: "instagram", label: "Instagram", aspectLabel: "Instagram (1080×1350, 4:5)", previewClass: "preview45", icon: <InstagramIcon size={16} id="output-tab" /> },
 ];
 
 function LinkedInGlobeIcon({ className }: { className?: string }) {
@@ -327,10 +354,8 @@ function LinkedInPersonalFeedPreview({
               <a href="#" className={styles.linkedinPersonalActorNameLink} onClick={(e) => e.preventDefault()}>
                 <span className={styles.linkedinPersonalActorName}>{name}</span>
                 <LinkedInVerifiedBadge className={styles.linkedinPersonalVerified} />
-                <span className={styles.linkedinPersonalDegree}> • 2nd</span>
               </a>
             </div>
-            <p className={styles.linkedinPersonalActorHeadline}>iSSi — Integration Solution Services Inc.</p>
             <p className={styles.linkedinPersonalActorMeta}>
               <span>Just now</span>
               <span aria-hidden> • Edited • </span>
@@ -372,10 +397,10 @@ function LinkedInPersonalFeedPreview({
                 </svg>
               </li>
             </ul>
-            <p className={styles.linkedinPersonalEngagementText}>{`${firstName} and 638 others reacted`}</p>
+            <p className={styles.linkedinPersonalEngagementText}>{`${firstName} and 42 others reacted`}</p>
           </a>
           <span role="button" tabIndex={0} className={styles.linkedinPersonalCommentsFake}>
-            142 comments
+            12 comments
           </span>
         </div>
 
@@ -629,6 +654,7 @@ export default function GeneratorPage() {
   const [generateError, setGenerateError] = useState("");
   const [draggingOver, setDraggingOver] = useState(false);
   const [trendingChips, setTrendingChips] = useState<string[]>(fallbackTrendingChips);
+  const [trendTopicsExpanded, setTrendTopicsExpanded] = useState(false);
   const [activeOutputPlatform, setActiveOutputPlatform] = useState<PlatformKey>("linkedin");
   const [editingPlatform, setEditingPlatform] = useState<PlatformKey | null>(null);
   const [generatedDrafts, setGeneratedDrafts] = useState<Record<PlatformKey, string>>(generatedContent);
@@ -806,16 +832,35 @@ export default function GeneratorPage() {
     setSaveError("");
 
     try {
-      const contentImage = platformImages.linkedin ?? platformImages.facebook ?? platformImages.instagram ?? imageSrc;
+      const platExport = primaryPlatformForDrive(platforms);
+      const contentImage =
+        platformImages.linkedin ?? platformImages.facebook ?? platformImages.instagram ?? imageSrc;
+
+      const baseForDrive =
+        imageSrc ??
+        platformImages[platExport] ??
+        platformImages.linkedin ??
+        platformImages.facebook ??
+        platformImages.instagram ??
+        "";
+
       const thumbnailImage = contentImage ? await createThumbnail(contentImage, 120) : "";
+      const driveImageDataUrl = baseForDrive ? await resizeImageForPlatform(baseForDrive, platExport, "jpeg") : "";
+      const authorSaved = author.trim() || "Current User";
 
       const res = await fetch("/api/contents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           thumbnailImage,
+          ...(driveImageDataUrl
+            ? {
+                driveImageDataUrl,
+                driveImageFileName: buildDriveImageFileName(authorSaved, contentIdea.trim() || title),
+              }
+            : {}),
           title,
-          author: author.trim() || "Current User",
+          author: authorSaved,
           dateCreated: new Date().toISOString(),
           dateScheduled: "",
           status: "Drafted",
@@ -837,7 +882,7 @@ export default function GeneratorPage() {
         body: JSON.stringify({
           item: title,
           action: "created content in Contents Library",
-          author: author.trim() || "Current User",
+          author: authorSaved,
           date: new Date().toISOString(),
           remarks: "generated from Content Generator",
         }),
@@ -868,20 +913,6 @@ export default function GeneratorPage() {
         </p>
       </div>
 
-      {/* Trending chips */}
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h3 style={{ marginBottom: "1rem", fontSize: "0.95rem", color: "var(--text-secondary)" }}>
-          Trending topics:
-        </h3>
-        <div className={styles.chipRow}>
-          {trendingChips.map((chip, i) => (
-            <span key={`${chip}-${i}`} className="chip" onClick={() => insertTopic(chip)}>
-              {chip}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* Two-column grid */}
       <div className={styles.generatorGrid}>
         {/* ── Left: Input panel ── */}
@@ -891,16 +922,68 @@ export default function GeneratorPage() {
               <i className={`fas fa-pen-fancy ${styles.cardTitleIcon}`} />
               Your Content Idea
             </h2>
-            <div className={styles.generationMetaBadges}>
-              <span className={styles.promptBadge} title={selectedPrompt.name}>
-                <i className="fas fa-scroll" aria-hidden />
-                Prompt: {selectedPrompt.name}
-              </span>
-              <span className={styles.modelBadge}>
-                <i className="fas fa-bolt" aria-hidden />
-                Gemini 2.5 Flash-Lite
-              </span>
+          </div>
+
+          <div className={styles.currentToolPanel}>
+            <div className={styles.currentToolGrid} role="group" aria-label="Selected prompt and AI model">
+              <div className={styles.currentToolGridTitle}>Your current tool:</div>
+
+              <div className={styles.currentToolCell}>
+                <div className={styles.currentToolCellBody} title={selectedPrompt.name}>
+                  <i className={`fas fa-scroll ${styles.currentToolCellBgIcon}`} aria-hidden />
+                  <span className={styles.currentToolCellLabel}>Prompt</span>
+                  <span className={styles.currentToolCellText}>{selectedPrompt.name}</span>
+                </div>
+              </div>
+
+              <div className={styles.currentToolCell}>
+                <div className={styles.currentToolCellBody}>
+                  <i className={`fas fa-bolt ${styles.currentToolCellBgIcon}`} aria-hidden />
+                  <span className={styles.currentToolCellLabel}>AI Model</span>
+                  <span className={styles.currentToolCellText}>Gemini 2.5 Flash-Lite</span>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <div style={{ marginBottom: "1.5rem" }}>
+            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.95rem" }}>
+              Author
+            </label>
+            <input
+              className="form-input"
+              type="text"
+              value={author}
+              onChange={(e) => setAuthor(e.target.value)}
+              placeholder="Enter author name..."
+            />
+          </div>
+
+          <div className={styles.ideaTrendSection}>
+            <div className={styles.ideaTrendHeader}>
+              <span id="generator-trending-heading" className={styles.ideaTrendLabel}>
+                Trending topics
+              </span>
+              <button
+                type="button"
+                className={styles.ideaTrendSuggestBtn}
+                aria-expanded={trendTopicsExpanded}
+                aria-controls="generator-trending-chips"
+                id="generator-trending-toggle"
+                onClick={() => setTrendTopicsExpanded((open) => !open)}
+              >
+                {trendTopicsExpanded ? "Hide" : "Suggest"}
+              </button>
+            </div>
+            {trendTopicsExpanded ? (
+              <div id="generator-trending-chips" className={styles.ideaTrendChipRow} role="region" aria-labelledby="generator-trending-heading">
+                {trendingChips.map((chip, i) => (
+                  <button key={`${chip}-${i}`} type="button" className={styles.ideaTrendChip} onClick={() => insertTopic(chip)}>
+                    {chip}
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div style={{ marginBottom: "1.5rem" }}>
@@ -930,19 +1013,6 @@ export default function GeneratorPage() {
             <p className={styles.inputHint}>
               The AI will read this page as context when available.
             </p>
-          </div>
-
-          <div style={{ marginBottom: "1.5rem" }}>
-            <label style={{ display: "block", fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.95rem" }}>
-              Author
-            </label>
-            <input
-              className="form-input"
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Enter author name..."
-            />
           </div>
 
           <div style={{ marginBottom: "1.5rem" }}>
@@ -1045,7 +1115,7 @@ export default function GeneratorPage() {
                   )}
                 </button>
                 <p className={styles.inputHint}>
-                  Creates matching 16:9 images for LinkedIn/Facebook and a 4:5 version for Instagram.
+                  Creates matching 1080×1080 (1:1) images for LinkedIn/Facebook and 1080×1350 (4:5) for Instagram.
                 </p>
               </div>
             )}
@@ -1066,7 +1136,7 @@ export default function GeneratorPage() {
                       <i className="fas fa-cloud-arrow-up" />
                     </div>
                     <div className={styles.dropLabel}>Drag and drop or click to upload</div>
-                    <div className={styles.dropHint}>Recommended: 1200×1200px or larger</div>
+                    <div className={styles.dropHint}>Recommended: 1080×1080px or larger</div>
                   </>
                 )}
                 <input
@@ -1140,6 +1210,9 @@ export default function GeneratorPage() {
                     <div className={styles.platformLabel}>{activeOutput.aspectLabel}</div>
                   )}
                   {activeOutput.key === "linkedin" && !generated && (
+                    <div className={styles.platformLabel}>{activeOutput.aspectLabel}</div>
+                  )}
+                  {activeOutput.key === "facebook" && !generated && (
                     <div className={styles.platformLabel}>{activeOutput.aspectLabel}</div>
                   )}
                   <div className={styles.previewHeader}>
