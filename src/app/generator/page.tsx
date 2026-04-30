@@ -8,6 +8,9 @@ import styles from "./page.module.css";
 
 const fallbackTrendingChips = ["mRNA Vaccines", "CRISPR Gene Therapy", "Personalized Medicine", "FDA Approvals"];
 
+/** Full-size image upload to Drive via Apps Script — off until Drive scopes/deploy are stable. */
+const CONTENTS_DRIVE_UPLOAD_ENABLED = false;
+
 type TrendTopic = {
   id: string;
   title: string;
@@ -832,33 +835,39 @@ export default function GeneratorPage() {
     setSaveError("");
 
     try {
-      const platExport = primaryPlatformForDrive(platforms);
       const contentImage =
         platformImages.linkedin ?? platformImages.facebook ?? platformImages.instagram ?? imageSrc;
 
-      const baseForDrive =
-        imageSrc ??
-        platformImages[platExport] ??
-        platformImages.linkedin ??
-        platformImages.facebook ??
-        platformImages.instagram ??
-        "";
-
       const thumbnailImage = contentImage ? await createThumbnail(contentImage, 120) : "";
-      const driveImageDataUrl = baseForDrive ? await resizeImageForPlatform(baseForDrive, platExport, "jpeg") : "";
       const authorSaved = author.trim() || "Current User";
+
+      let drivePayload: Record<string, string> = {};
+      if (CONTENTS_DRIVE_UPLOAD_ENABLED) {
+        const platExport = primaryPlatformForDrive(platforms);
+        const baseForDrive =
+          imageSrc ??
+          platformImages[platExport] ??
+          platformImages.linkedin ??
+          platformImages.facebook ??
+          platformImages.instagram ??
+          "";
+        const driveImageDataUrl = baseForDrive
+          ? await resizeImageForPlatform(baseForDrive, platExport, "jpeg")
+          : "";
+        if (driveImageDataUrl) {
+          drivePayload = {
+            driveImageDataUrl,
+            driveImageFileName: buildDriveImageFileName(authorSaved, contentIdea.trim() || title),
+          };
+        }
+      }
 
       const res = await fetch("/api/contents", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           thumbnailImage,
-          ...(driveImageDataUrl
-            ? {
-                driveImageDataUrl,
-                driveImageFileName: buildDriveImageFileName(authorSaved, contentIdea.trim() || title),
-              }
-            : {}),
+          ...drivePayload,
           title,
           author: authorSaved,
           dateCreated: new Date().toISOString(),

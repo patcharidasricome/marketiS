@@ -16,7 +16,11 @@
  *    ไม่ใช่แค่ “Anyone with Google account” — เซิร์ฟเวอร์ Next.js เรียก Apps Script
  *    แบบไม่มี cookie ล็อกอิน Google ถ้าตั้งผิดจะได้หน้า HTML (login) แทน JSON
  *
- * 4. รันครั้งแรก Apps Script จะขอสิทธิ์ Drive — อนุมัติให้ครบ
+ * 4. สิทธิ์ Drive (ถ้าไม่อนุมัติ จะ error “You do not have permission to call DriveApp…”):
+ *    - ใน Editor ให้เพิ่มฟังก์ชัน authorizeDriveOnce() ด้านล่างไฟล์นี้ → เลือกใน dropdown → Run
+ *    - กด Review permissions → เลือกบัญชีเดียวกับ Execute as → Advanced → Allow “Google Drive API” / เข้าถึงไฟล์
+ *    - หรือเปิดไฟล์ appsscript.json (Project Settings → แสดง manifest) แล้วใส่ oauthScopes ตามตัวอย่าง
+ *      scripts/google-apps-script-appsscript.json.example แล้ว Save + Run authorizeDriveOnce อีกครั้ง
  *
  * POST body จาก MarketiS (เมื่อมีรูป):
  *   driveImageDataUrl   — data URL (แนะนำ JPEG เพื่อให้ POST เล็ก — Apps Script รับ MIME จาก data URL)
@@ -152,4 +156,13 @@ function doGet() {
   return ContentService
     .createTextOutput(JSON.stringify({ ok: true, data: data }))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * รันครั้งเดียวใน Editor เพื่อให้โปรเจกต์ขอสCOPE Drive แล้วอนุมัติบัญชีที่เป็นเจ้าของสคริปต์
+ * (หลังรันสำเร็จแล้วลบฟังก์ชันนี้ออกก็ได้)
+ */
+function authorizeDriveOnce() {
+  DriveApp.getRootFolder();
+  SpreadsheetApp.openById("1wiy3u0o0Rv9GTQVpq63xqsiNLKHGGai0eTQgdSscEzQ");
 }
