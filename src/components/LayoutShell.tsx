@@ -42,7 +42,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
               <i className="fas fa-angles-left" />
             )}
           </button>
-          <span className={`gradient-text ${styles.pageTitle}`}>{pageTitle}</span>
+          <span className={styles.pageTitle}>{pageTitle}</span>
         </header>
 
         <main className={styles.main}>

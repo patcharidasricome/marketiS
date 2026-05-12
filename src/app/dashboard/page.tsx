@@ -56,9 +56,17 @@ export default function DashboardPage() {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
   }
 
-  function handleUseTopicForContent(topic: string) {
-    sessionStorage.setItem("contentTopic", topic);
-    router.push(`/generator?topic=${encodeURIComponent(topic)}`);
+  function handleUseTopicForContent(topic: TrendTopic) {
+    sessionStorage.setItem("contentTopic", topic.title);
+    sessionStorage.setItem(
+      "contentTopicDetail",
+      JSON.stringify({
+        title: topic.title,
+        context: topic.context,
+        link: topic.link,
+      }),
+    );
+    router.push(`/generator?topic=${encodeURIComponent(topic.title)}`);
   }
 
   const filteredTopics = activeCategory === "All"
@@ -150,7 +158,7 @@ export default function DashboardPage() {
                 <button
                   className="btn-primary"
                   style={{ flexShrink: 0, padding: "0.45rem 0.9rem", fontSize: "0.8rem", whiteSpace: "nowrap" }}
-                  onClick={() => handleUseTopicForContent(topic.title)}
+                  onClick={() => handleUseTopicForContent(topic)}
                 >
                   <i className="fas fa-wand-magic-sparkles" /> Write Content
                 </button>

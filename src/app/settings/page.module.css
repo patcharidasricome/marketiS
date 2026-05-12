@@ -3,46 +3,45 @@
 .settingsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  margin-bottom: 2rem;
+  gap: 24px;
+  margin-bottom: 24px;
 }
 @media (max-width: 1024px) {
   .settingsGrid { grid-template-columns: 1fr; }
 }
 
 .section {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid var(--border-light);
-  transition: all 0.3s ease;
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  transition: border-color 150ms ease;
 }
 .section:hover {
-  border-color: rgba(124, 58, 237, 0.2);
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.05);
+  border-color: var(--border-hover);
 }
 
 .sectionTitle {
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 8px;
   color: var(--text-primary);
 }
 
 .sectionTitleIcon {
-  color: var(--primary-purple);
+  color: var(--primary);
 }
 
 .sectionTitleRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 16px;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 }
 
 .sectionTitleRow .sectionTitle {
@@ -55,56 +54,55 @@
 
 .label {
   display: block;
-  font-weight: 600;
-  margin-bottom: 0.6rem;
-  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
 }
 
 .formGroup {
-  margin-bottom: 1.5rem;
+  margin-bottom: 24px;
 }
 
 /* ─── Prompt configuration ───────────────────────────────────── */
 .promptCard {
-  background:
-    linear-gradient(135deg, rgba(26, 35, 126, 0.04), rgba(124, 58, 237, 0.06)),
-    #fff;
-  border: 1px solid rgba(124, 58, 237, 0.16);
-  border-radius: 12px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 16px;
 }
 
 .promptCardHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.75rem;
+  gap: 16px;
+  margin-bottom: 12px;
 }
 
 .promptEyebrow {
-  color: var(--primary-purple);
-  font-size: 0.72rem;
-  font-weight: 700;
+  color: var(--text-link);
+  font-size: 12px;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  margin-bottom: 0.25rem;
+  margin-bottom: 4px;
 }
 
 .promptName {
   margin: 0;
   color: var(--text-primary);
-  font-size: 0.98rem;
+  font-size: 14px;
 }
 
 .promptTextButton {
   border: none;
   background: transparent;
-  color: var(--primary-purple);
+  color: var(--text-link);
   cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 12px;
+  font-weight: 500;
   white-space: nowrap;
 }
 
@@ -113,22 +111,22 @@
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  margin: 0 0 1rem;
+  margin: 0 0 16px;
   color: var(--text-secondary);
-  font-size: 0.82rem;
+  font-size: 12px;
   line-height: 1.55;
 }
 
 .promptActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .promptSuccess,
 .promptError {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 12px;
 }
 
 .promptSuccess {
@@ -146,40 +144,40 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.25rem;
-  background: rgba(15, 23, 42, 0.52);
+  padding: 16px;
+  background: var(--backdrop);
 }
 
 .promptModal {
   width: min(860px, 100%);
   max-height: min(760px, 90vh);
   overflow: hidden;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+  border-radius: 6px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
 }
 
 .promptModalHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border-light);
+  gap: 16px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .promptModalHeader h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 16px;
   color: var(--text-primary);
 }
 
 .modalCloseBtn {
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--border-light);
-  border-radius: 999px;
-  background: #fff;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
   color: var(--text-secondary);
   cursor: pointer;
 }
@@ -188,11 +186,11 @@
   max-height: calc(90vh - 80px);
   overflow: auto;
   margin: 0;
-  padding: 1.25rem;
+  padding: 16px;
   white-space: pre-wrap;
   color: var(--text-primary);
   font-family: var(--font-inter, 'Inter', sans-serif);
-  font-size: 0.86rem;
+  font-size: 14px;
   line-height: 1.6;
 }
 
@@ -202,24 +200,24 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 16px;
-  background: #fff;
-  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+  border-radius: 6px;
+  background: var(--surface-overlay);
+  border: 1px solid var(--border);
 }
 
 .createPromptBody {
-  padding: 1rem 1.25rem 1.25rem;
+  padding: 16px;
   overflow-y: auto;
   max-height: calc(92vh - 140px);
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 16px;
 }
 
 .createPromptField {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 4px;
 }
 
 .createPromptField .label {
@@ -228,13 +226,13 @@
 
 .fieldHint {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 12px;
   color: var(--text-secondary);
   line-height: 1.45;
 }
 
 .optionalMark {
-  font-weight: 500;
+  font-weight: 400;
   color: var(--text-secondary);
 }
 
@@ -245,27 +243,28 @@
 .createPromptTextarea {
   width: 100%;
   min-height: 220px;
-  padding: 0.75rem 0.9rem 2.25rem;
-  border: 1px solid var(--border-light);
-  border-radius: 10px;
+  padding: 12px 12px 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
   resize: vertical;
   font-family: var(--font-inter, 'Inter', sans-serif);
-  font-size: 0.9rem;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--text-primary);
+  background: var(--background);
 }
 
 .createPromptTextarea:focus {
-  outline: none;
-  border-color: var(--primary-purple);
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-color: var(--primary);
 }
 
 .charCounter {
   position: absolute;
-  right: 0.65rem;
-  bottom: 0.55rem;
-  font-size: 0.72rem;
+  right: 10px;
+  bottom: 8px;
+  font-size: 12px;
   color: var(--text-secondary);
   pointer-events: none;
 }
@@ -275,13 +274,13 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  color: var(--primary-navy);
-  font-weight: 600;
-  font-size: 0.88rem;
-  padding: 0.15rem 0;
+  color: var(--text-link);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 2px 0;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 6px;
 }
 
 .addLinkBtn:hover:not(:disabled) {
@@ -296,12 +295,12 @@
 .attachedLinksList {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 8px;
 }
 
 .linkRow {
   display: flex;
-  gap: 0.5rem;
+  gap: 8px;
   align-items: stretch;
 }
 
@@ -311,11 +310,11 @@
 
 .removeLinkBtn {
   flex-shrink: 0;
-  width: 42px;
-  min-height: 42px;
-  border: 1px solid var(--border-light);
-  border-radius: 8px;
-  background: #fff;
+  width: 32px;
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
   color: var(--text-secondary);
   cursor: pointer;
   display: inline-flex;
@@ -324,18 +323,18 @@
 }
 
 .removeLinkBtn:hover:not(:disabled) {
-  border-color: rgba(220, 38, 38, 0.35);
+  border-color: var(--error);
   color: var(--error);
 }
 
 .createPromptFooter {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: 12px;
   flex-wrap: wrap;
-  padding: 1rem 1.25rem;
-  border-top: 1px solid var(--border-light);
-  background: #fafafa;
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
 }
 
 @media (max-width: 520px) {
@@ -355,29 +354,31 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.8rem 1rem;
-  background: #f9fafb;
-  border-radius: 8px;
-  margin-bottom: 0.8rem;
-  font-size: 0.9rem;
+  padding: 8px 16px;
+  background: var(--surface-elevated);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
 }
 
 .statusBadge {
-  background: #d1fae5;
+  background: rgba(63, 185, 80, 0.15);
   color: var(--success);
-  padding: 0.3rem 0.8rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .memberRow {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.8rem;
-  background: #f9fafb;
-  border-radius: 8px;
+  padding: 8px 12px;
+  background: var(--surface-elevated);
+  border-radius: 6px;
+  color: var(--text-primary);
 }
 
 .memberName {
@@ -385,16 +386,17 @@
 }
 
 .roleSelect {
-  padding: 0.5rem;
-  border: 1px solid var(--border-light);
+  padding: 6px 8px;
+  border: 1px solid var(--border);
   border-radius: 6px;
-  background: white;
+  background: var(--background);
+  color: var(--text-primary);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 14px;
 }
 
 .memberList {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 8px;
 }

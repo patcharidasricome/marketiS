@@ -2,100 +2,99 @@
 
 .toolbar {
   display: flex;
-  gap: 1rem;
+  gap: 12px;
   flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 }
 
 .tabsWrap {
-  margin-bottom: 1.5rem;
+  margin-bottom: 16px;
   width: 100%;
 }
 
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
-  padding: 0.35rem;
-  background: rgba(124, 58, 237, 0.06);
-  border-radius: 10px;
-  border: 1px solid var(--border-light);
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface);
+  border-radius: 6px;
+  border: 1px solid var(--border);
 }
 
 .tab {
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-weight: 600;
-  font-size: 0.82rem;
-  padding: 0.45rem 0.85rem;
-  border-radius: 8px;
+  font-weight: 500;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  transition: background 150ms ease, color 150ms ease;
 }
 
 .tab:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.65);
+  background: var(--surface-elevated);
 }
 
 .tab:focus-visible {
-  outline: 2px solid var(--primary-purple);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 .tabActive {
-  background: #fff;
-  color: var(--primary-purple);
-  box-shadow: 0 1px 4px rgba(124, 58, 237, 0.15);
+  background: var(--surface-elevated);
+  color: var(--text-link);
 }
 
 .tab.tabActive:hover {
-  background: #fff;
-  color: var(--primary-purple);
+  background: var(--surface-elevated);
+  color: var(--text-link);
 }
 
 .statusBadge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.3rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--primary-purple);
-  background: rgba(124, 58, 237, 0.1);
-  border: 1px solid rgba(124, 58, 237, 0.18);
+  padding: 4px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-link);
+  background: rgba(47, 129, 247, 0.1);
+  border: 1px solid rgba(47, 129, 247, 0.2);
 }
 
 .platformRow {
   display: flex;
-  gap: 0.3rem;
+  gap: 4px;
   align-items: center;
 }
 
 .platformText {
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--text-secondary);
 }
 
 .thumbnailImage {
   width: 120px;
   height: 120px;
-  border-radius: 12px;
+  border-radius: 6px;
   object-fit: cover;
-  border: 1px solid var(--border-light);
+  border: 1px solid var(--border);
 }
 
 .thumbnailPlaceholder {
   width: 120px;
   height: 120px;
-  border-radius: 12px;
-  border: 1px solid var(--border-light);
-  background: linear-gradient(135deg, rgba(26,35,126,0.08), rgba(124,58,237,0.08));
-  color: var(--primary-purple);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-elevated);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -103,13 +102,14 @@
 
 .contentTitle {
   font-weight: 600;
+  color: var(--text-primary);
 }
 
 .actionCell {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.45rem;
+  gap: 8px;
 }
 
 .scheduleLink {
@@ -117,16 +117,15 @@
   color: var(--text-primary);
 }
 
-/** Equal vertical padding for Edit / Schedule / Archive in the contents table */
 .actionToolbarBtn {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  padding-block: 0.5rem !important;
-  padding-inline: 0.75rem !important;
-  font-size: 0.85rem !important;
+  gap: 4px;
+  padding-block: 6px !important;
+  padding-inline: 12px !important;
+  font-size: 12px !important;
   line-height: 1.25;
 }
 
@@ -134,29 +133,29 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  border: 1px solid rgba(146, 64, 14, 0.35);
-  border-radius: 8px;
-  font-size: 0.78rem;
-  font-weight: 600;
+  gap: 4px;
+  border: 1px solid rgba(210, 153, 34, 0.4);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
   cursor: pointer;
-  background: rgba(251, 191, 36, 0.18);
-  color: #92400e;
-  transition: background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+  background: rgba(210, 153, 34, 0.15);
+  color: var(--warning);
+  transition: background 150ms ease, border-color 150ms ease;
 }
 
 .archiveBtn:hover:not(:disabled) {
-  background: rgba(251, 191, 36, 0.28);
-  border-color: rgba(146, 64, 14, 0.45);
+  background: rgba(210, 153, 34, 0.25);
+  border-color: var(--warning);
 }
 
 .archiveBtn:disabled {
-  opacity: 0.65;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .contentSubtitle {
-  font-size: 0.78rem;
+  font-size: 12px;
   color: var(--text-secondary);
-  margin-top: 0.2rem;
+  margin-top: 4px;
 }

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { applyTheme, type Theme } from "@/lib/theme";
 import styles from "./Sidebar.module.css";
 
 const navItems = [
@@ -35,12 +37,32 @@ const navItems = [
   },
 ];
 
+function readThemeFromDocument(): Theme {
+  if (typeof document === "undefined") return "light";
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
+}
+
 interface SidebarProps {
   collapsed: boolean;
 }
 
 export default function Sidebar({ collapsed }: SidebarProps) {
   const pathname = usePathname();
+  const [theme, setTheme] = useState<Theme>("light");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setTheme(readThemeFromDocument());
+    setMounted(true);
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    const next: Theme = readThemeFromDocument() === "dark" ? "light" : "dark";
+    applyTheme(next);
+    setTheme(next);
+  }, []);
+
+  const isDark = theme === "dark";
 
   return (
     <>
@@ -51,8 +73,8 @@ export default function Sidebar({ collapsed }: SidebarProps) {
       <div className={`${styles.sidebar} ${collapsed ? styles.collapsed : ""}`}>
 
         {/* Logo */}
-        <div className={`${styles.logo} gradient-text`}>
-          <i className="fas fa-sparkles" style={{ flexShrink: 0 }} />
+        <div className={styles.logo}>
+          <i className={`fas fa-sparkles ${styles.logoIcon}`} />
           <span className={styles.logoText}>MarketiS</span>
         </div>
 
@@ -75,6 +97,25 @@ export default function Sidebar({ collapsed }: SidebarProps) {
             </div>
           ))}
         </nav>
+
+        <div className={styles.themeFooter}>
+          {mounted ? (
+            <button
+              type="button"
+              className={styles.themeToggle}
+              onClick={toggleTheme}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              title={isDark ? "Light mode" : "Dark mode"}
+            >
+              <i className={`fas ${isDark ? "fa-sun" : "fa-moon"} ${styles.themeToggleIcon}`} />
+              <span className={styles.themeToggleLabel}>
+                {isDark ? "Light mode" : "Dark mode"}
+              </span>
+            </button>
+          ) : (
+            <div className={styles.themeToggleSkeleton} aria-hidden />
+          )}
+        </div>
       </div>
     </>
   );

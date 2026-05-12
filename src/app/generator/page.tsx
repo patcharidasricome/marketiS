@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { FacebookIcon, InstagramIcon, LinkedInIcon } from "@/components/PlatformIcons";
 import { externalMarketingInstructions } from "@/lib/marketingPrompt";
+import LottieLoader from "@/components/LottieLoader";
 import styles from "./page.module.css";
 
 const fallbackTrendingChips = ["mRNA Vaccines", "CRISPR Gene Therapy", "Personalized Medicine", "FDA Approvals"];
@@ -15,12 +16,16 @@ type TrendTopic = {
   id: string;
   title: string;
   category: string;
+  source: string;
+  link: string;
+  publishedAt: string;
+  traffic: string;
+  context: string;
 };
 
 type PlatformKey = "facebook" | "instagram" | "linkedin";
 type ImageMode = "banana" | "upload";
 
-const trendCategories = ["Life Sciences", "Utilities", "Oil & Gas", "SAP"];
 const SELECTED_PROMPT_STORAGE_KEY = "marketiS-selected-content-prompt";
 
 type StoredPrompt = {
@@ -333,10 +338,12 @@ function LinkedInPersonalFeedPreview({
   caption,
   imageSrc,
   authorName,
+  loading = false,
 }: {
   caption: string;
   imageSrc: string | null;
   authorName: string;
+  loading?: boolean;
 }) {
   const name = authorName.trim() || "Author";
   const firstName = name.split(/\s+/)[0] ?? name;
@@ -368,16 +375,24 @@ function LinkedInPersonalFeedPreview({
           </div>
         </div>
 
-        <div className={styles.linkedinPersonalCommentary}>{caption}</div>
-
-        {imageSrc && (
-          <div className={styles.linkedinPersonalMediaBlock}>
-            <a href="#" className={styles.linkedinPersonalMediaAspect} onClick={(e) => e.preventDefault()} aria-label="View attachment">
-              <figure className={styles.linkedinPersonalMediaFigure}>
-                <img src={imageSrc} alt="" className={styles.linkedinPersonalMediaImg} />
-              </figure>
-            </a>
+        {loading ? (
+          <div className={styles.linkedinBodyLottie} role="status" aria-live="polite" aria-label="Generating post…">
+            <LottieLoader size={140} label="Generating post…" />
+            <span className={styles.linkedinBodyLottieLabel}>Generating your post…</span>
           </div>
+        ) : (
+          <>
+            <div className={styles.linkedinPersonalCommentary}>{caption}</div>
+            {imageSrc && (
+              <div className={styles.linkedinPersonalMediaBlock}>
+                <a href="#" className={styles.linkedinPersonalMediaAspect} onClick={(e) => e.preventDefault()} aria-label="View attachment">
+                  <figure className={styles.linkedinPersonalMediaFigure}>
+                    <img src={imageSrc} alt="" className={styles.linkedinPersonalMediaImg} />
+                  </figure>
+                </a>
+              </div>
+            )}
+          </>
         )}
 
         <div className={styles.linkedinPersonalEngagementRow}>
@@ -451,15 +466,17 @@ function LinkedInPostPreview({
   caption,
   imageSrc,
   authorName,
+  loading = false,
 }: {
   caption: string;
   imageSrc: string | null;
   authorName: string;
+  loading?: boolean;
 }) {
-  if (captionContainsHttpLike(caption)) {
+  if (!loading && captionContainsHttpLike(caption)) {
     return <LinkedInCompanyLinkPreview caption={caption} imageSrc={imageSrc} />;
   }
-  return <LinkedInPersonalFeedPreview caption={caption} imageSrc={imageSrc} authorName={authorName} />;
+  return <LinkedInPersonalFeedPreview caption={caption} imageSrc={imageSrc} authorName={authorName} loading={loading} />;
 }
 
 function InstagramPostPreview({
@@ -651,12 +668,24 @@ export default function GeneratorPage() {
   const [uploadExpanded, setUploadExpanded] = useState(false);
   const [bananaPrompt, setBananaPrompt] = useState("");
   const [generatingImage, setGeneratingImage] = useState(false);
+  const [readingImage, setReadingImage] = useState(false);
   const [imageError, setImageError] = useState("");
   const [generated, setGenerated] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState("");
   const [draggingOver, setDraggingOver] = useState(false);
-  const [trendingChips, setTrendingChips] = useState<string[]>(fallbackTrendingChips);
+  const [trendingTopicsForChips, setTrendingTopicsForChips] = useState<TrendTopic[]>(() =>
+    fallbackTrendingChips.map((title, i) => ({
+      id: `fallback-${i}`,
+      title,
+      category: "Life Sciences",
+      source: "",
+      link: "",
+      publishedAt: "",
+      traffic: "",
+      context: "",
+    })),
+  );
   const [trendTopicsExpanded, setTrendTopicsExpanded] = useState(false);
   const [activeOutputPlatform, setActiveOutputPlatform] = useState<PlatformKey>("linkedin");
   const [editingPlatform, setEditingPlatform] = useState<PlatformKey | null>(null);
@@ -677,6 +706,24 @@ export default function GeneratorPage() {
   }, []);
 
   useEffect(() => {
+    const detailRaw = sessionStorage.getItem("contentTopicDetail");
+    if (detailRaw) {
+      try {
+        const detail = JSON.parse(detailRaw) as { title: string; context?: string; link?: string };
+        sessionStorage.removeItem("contentTopicDetail");
+        sessionStorage.removeItem("contentTopic");
+        const summary = detail.context?.trim();
+        const idea = summary ? `${detail.title.trim()}\n\n${summary}` : detail.title.trim();
+        const timeout = window.setTimeout(() => {
+          setContentIdea(idea);
+          setSourceUrl(detail.link?.trim() ?? "");
+        }, 0);
+        return () => window.clearTimeout(timeout);
+      } catch {
+        sessionStorage.removeItem("contentTopicDetail");
+      }
+    }
+
     const params = new URLSearchParams(window.location.search);
     const topic = params.get("topic") || sessionStorage.getItem("contentTopic");
 
@@ -695,31 +742,59 @@ export default function GeneratorPage() {
         if (!res.ok) throw new Error("Unable to load trends");
 
         const topics = (data.topics ?? []) as TrendTopic[];
-        const topicTitles = trendCategories.flatMap((category) =>
-          topics.filter((topic) => topic.category === category).slice(0, 1).map((topic) => topic.title),
-        );
+        const seen = new Set<string>();
+        const unique = topics.filter((topic) => {
+          const key = topic.title.toLowerCase();
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
 
-        if (topicTitles.length > 0) {
-          setTrendingChips([...new Set(topicTitles)]);
+        if (unique.length > 0) {
+          setTrendingTopicsForChips(unique);
         }
       } catch {
-        setTrendingChips(fallbackTrendingChips);
+        setTrendingTopicsForChips(
+          fallbackTrendingChips.map((title, i) => ({
+            id: `fallback-${i}`,
+            title,
+            category: "Life Sciences",
+            source: "",
+            link: "",
+            publishedAt: "",
+            traffic: "",
+            context: "",
+          })),
+        );
       }
     }
 
     loadTrendingChips();
   }, []);
 
-  function insertTopic(topic: string) {
-    setContentIdea((prev) => (prev ? `${prev} ${topic}` : topic).trim());
+  function buildContentIdeaFromTrendTopic(topic: TrendTopic): string {
+    const summary = topic.context?.trim();
+    if (!summary) return topic.title.trim();
+    return `${topic.title.trim()}\n\n${summary}`;
+  }
+
+  function handleTrendChipClick(topic: TrendTopic) {
+    setContentIdea(buildContentIdeaFromTrendTopic(topic));
+    setSourceUrl(topic.link?.trim() ?? "");
   }
 
   function handleImageFile(file: File) {
+    setReadingImage(true);
+    setImageError("");
     const reader = new FileReader();
     reader.onload = (e) => {
       setImageSrc(e.target?.result as string);
       setPlatformImages({});
-      setImageError("");
+      setReadingImage(false);
+    };
+    reader.onerror = () => {
+      setReadingImage(false);
+      setImageError("Could not read that image. Try another file.");
     };
     reader.readAsDataURL(file);
   }
@@ -909,12 +984,14 @@ export default function GeneratorPage() {
   const activeOutput = selectedOutputPlatforms.find(({ key }) => key === activeOutputPlatform) ?? selectedOutputPlatforms[0];
   const isEditingActiveOutput = activeOutput ? editingPlatform === activeOutput.key : false;
   const activePreviewImage = activeOutput ? (platformImages[activeOutput.key] ?? imageSrc) : imageSrc;
+  /** Claude-style placeholder in Preview column while upload reads or Banana AI generates */
+  const showPreviewImageLoading = readingImage || generatingImage;
 
   return (
     <div>
       {/* Page header */}
       <div style={{ marginBottom: "2rem" }}>
-        <h1 className="gradient-text" style={{ fontSize: "1.8rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+        <h1 style={{ fontSize: "1.8rem", fontWeight: 600, marginBottom: "0.5rem", color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
           Content Generator
         </h1>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.95rem" }}>
@@ -986,9 +1063,14 @@ export default function GeneratorPage() {
             </div>
             {trendTopicsExpanded ? (
               <div id="generator-trending-chips" className={styles.ideaTrendChipRow} role="region" aria-labelledby="generator-trending-heading">
-                {trendingChips.map((chip, i) => (
-                  <button key={`${chip}-${i}`} type="button" className={styles.ideaTrendChip} onClick={() => insertTopic(chip)}>
-                    {chip}
+                {trendingTopicsForChips.map((topic) => (
+                  <button
+                    key={topic.id}
+                    type="button"
+                    className={styles.ideaTrendChip}
+                    onClick={() => handleTrendChipClick(topic)}
+                  >
+                    {topic.title}
                   </button>
                 ))}
               </div>
@@ -1113,15 +1195,24 @@ export default function GeneratorPage() {
                 />
                 <button
                   type="button"
-                  className={styles.bananaGenerateBtn}
+                  className={`${styles.bananaGenerateBtn}${generatingImage ? ` ${styles.bananaGenerateBtnBusy}` : ""}`}
                   onClick={handleGenerateImage}
                   disabled={generatingImage}
+                  aria-busy={generatingImage}
                 >
-                  {generatingImage ? (
-                    <><i className="fas fa-spinner fa-spin" /> Generating image...</>
-                  ) : (
-                    <><i className="fas fa-wand-magic-sparkles" /> Generate Platform Images</>
-                  )}
+                  <span className={styles.bananaGenerateBtnInner}>
+                    {generatingImage ? (
+                      <>
+                        <span className={styles.claudeOrb} aria-hidden />
+                        Generating image…
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-wand-magic-sparkles" aria-hidden />
+                        Generate Platform Images
+                      </>
+                    )}
+                  </span>
                 </button>
                 <p className={styles.inputHint}>
                   Creates matching 1080×1080 (1:1) images for LinkedIn/Facebook and 1080×1350 (4:5) for Instagram.
@@ -1131,18 +1222,24 @@ export default function GeneratorPage() {
 
             {imageMode === "upload" && uploadExpanded && (
               <div
-                className={`${styles.dropZone} ${styles.dropZoneExpanded}${draggingOver ? ` ${styles.dropZoneDragging}` : ""}`}
-                onClick={() => fileInputRef.current?.click()}
+                className={`${styles.dropZone} ${styles.dropZoneExpanded}${draggingOver ? ` ${styles.dropZoneDragging}` : ""}${readingImage ? ` ${styles.dropZoneLoading}` : ""}`}
+                onClick={() => !readingImage && fileInputRef.current?.click()}
                 onDragOver={(e) => { e.preventDefault(); setDraggingOver(true); }}
                 onDragLeave={() => setDraggingOver(false)}
                 onDrop={handleDrop}
+                aria-busy={readingImage}
               >
-                {imageSrc ? (
+                {readingImage ? (
+                  <>
+                    <div className={styles.claudeFlow} aria-hidden />
+                    <span className={styles.claudeLoadingLabel}>Preparing your image…</span>
+                  </>
+                ) : imageSrc ? (
                   <img src={imageSrc} alt="Preview" className={styles.imageThumb} />
                 ) : (
                   <>
                     <div className={styles.dropIcon}>
-                      <i className="fas fa-cloud-arrow-up" />
+                      <i className="fas fa-cloud-arrow-up" aria-hidden />
                     </div>
                     <div className={styles.dropLabel}>Drag and drop or click to upload</div>
                     <div className={styles.dropHint}>Recommended: 1080×1080px or larger</div>
@@ -1185,7 +1282,7 @@ export default function GeneratorPage() {
         </div>
 
         {/* ── Right: Generated output panel ── */}
-        <div className={`card${generated ? "" : ` ${styles.panelDisabled}`}`}>
+        <div className={`card${generated ? "" : ` ${styles.panelDisabled}`}${(generatingImage || readingImage) && !generated ? ` ${styles.panelDisabledImageGen}` : ""}`}>
           <h2 className={styles.cardTitle}>
             <i className={`fas fa-sparkles ${styles.cardTitleIcon}`} />
             Preview
@@ -1224,8 +1321,59 @@ export default function GeneratorPage() {
                   {activeOutput.key === "facebook" && !generated && (
                     <div className={styles.platformLabel}>{activeOutput.aspectLabel}</div>
                   )}
+                  {/* LinkedIn: always show card shell; Lottie renders inside it while loading */}
+                  {activeOutput.key === "linkedin" && (generating || showPreviewImageLoading || generated) ? (
+                    <>
+                      <div className={styles.previewHeader}>
+                        {generated && (
+                          <button
+                            type="button"
+                            className={styles.editPreviewBtn}
+                            onClick={() => setEditingPlatform(isEditingActiveOutput ? null : activeOutput.key)}
+                            aria-label={isEditingActiveOutput ? "Finish editing generated post" : "Edit generated post"}
+                          >
+                            <i className={`fas ${isEditingActiveOutput ? "fa-check" : "fa-pen-to-square"}`} />
+                            {isEditingActiveOutput ? "Done" : "Edit Caption"}
+                          </button>
+                        )}
+                      </div>
+                      {isEditingActiveOutput ? (
+                        <textarea
+                          className={styles.contentEditor}
+                          value={generatedDrafts[activeOutput.key]}
+                          onChange={(e) => setGeneratedDrafts((prev) => ({ ...prev, [activeOutput.key]: e.target.value }))}
+                          rows={7}
+                        />
+                      ) : (
+                        <LinkedInPostPreview
+                          caption={generatedDrafts.linkedin ?? ""}
+                          imageSrc={showPreviewImageLoading ? null : activePreviewImage}
+                          authorName="iSSi - Integration Solution Services Inc."
+                          loading={generating || showPreviewImageLoading}
+                        />
+                      )}
+                    </>
+                  ) : null}
+
+                  {/* Non-LinkedIn platforms */}
+                  {activeOutput.key !== "linkedin" && showPreviewImageLoading ? (
+                    <div
+                      className={`${activeOutput.previewClass === "preview45" ? styles.preview45 : styles.preview11} ${styles.previewLottieShell}`}
+                      aria-live="polite"
+                    >
+                      <LottieLoader
+                        size={180}
+                        label={readingImage ? "Preparing your image…" : "Creating your image…"}
+                      />
+                      <span className={styles.previewLottieLabel}>
+                        {readingImage ? "Preparing your image…" : "Creating your image…"}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {activeOutput.key !== "linkedin" && !showPreviewImageLoading ? (
+                  <>
                   <div className={styles.previewHeader}>
-      
                     {generated && (
                       <button
                         type="button"
@@ -1248,12 +1396,6 @@ export default function GeneratorPage() {
                   ) : (
                     activeOutput.key === "facebook" && generated ? (
                       <FacebookPostPreview caption={generatedDrafts.facebook} imageSrc={activePreviewImage} />
-                    ) : activeOutput.key === "linkedin" && generated ? (
-                      <LinkedInPostPreview
-                        caption={generatedDrafts.linkedin}
-                        imageSrc={activePreviewImage}
-                        authorName="iSSi - Integration Solution Services Inc."
-                      />
                     ) : activeOutput.key === "instagram" && generated ? (
                       <InstagramPostPreview
                         caption={generatedDrafts.instagram}
@@ -1266,6 +1408,8 @@ export default function GeneratorPage() {
                       </div>
                     )
                   )}
+                  </>
+                  ) : null}
                 </div>
               )}
             </>
